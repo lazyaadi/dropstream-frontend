@@ -14,7 +14,7 @@ import {
 
 // ─── CONSTANTS ───
 const WORKER_URL = import.meta.env?.VITE_WORKER_URL || "https://rana-ai.ak3807654.workers.dev";
-const SERVER_URL = import.meta.env?.VITE_SERVER_URL || "http://localhost:3001";
+const SERVER_URL = import.meta.env?.VITE_SERVER_URL || (import.meta.env?.DEV ? "http://localhost:3001" : "https://dropstream-backend.onrender.com");
 const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
 const PRO_PIN_KEY = "sb_pro_pin";
