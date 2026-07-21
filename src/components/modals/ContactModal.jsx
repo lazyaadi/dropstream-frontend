@@ -26,6 +26,16 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     return String(serverUrl).replace(/\/$/, "");
   }, [serverUrl]);
 
+  const submitToContact = async (baseUrl, payload, signal) => {
+    const target = baseUrl ? `${baseUrl}/api/contact` : "/api/contact";
+    return fetch(target, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ type: "", text: "" });
@@ -49,22 +59,27 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     }
 
     setIsSubmitting(true);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const res = await fetch(`${apiBase}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: trimmedName,
-          email: trimmedEmail,
-          subject: trimmedSubject,
-          message: trimmedMessage,
-          website,
-          workspaceName: context?.workspaceName || "",
-          userName: context?.userName || "",
-          userEmail: context?.userEmail || "",
-          role: context?.role || "",
-        }),
-      });
+      const payload = {
+        name: trimmedName,
+        email: trimmedEmail,
+        subject: trimmedSubject,
+        message: trimmedMessage,
+        website,
+        workspaceName: context?.workspaceName || "",
+        userName: context?.userName || "",
+        userEmail: context?.userEmail || "",
+        role: context?.role || "",
+      };
+
+      let res = await submitToContact(apiBase, payload, controller.signal);
+      if (res.status === 404 && apiBase) {
+        res = await submitToContact("", payload, controller.signal);
+      }
+
+      clearTimeout(timeout);
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -76,6 +91,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     } catch (err) {
       setStatus({ type: "error", text: err?.message || "Failed to send message." });
     } finally {
+      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };
@@ -89,7 +105,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`fixed inset-0 ${isDark ? "bg-slate-950/80" : "bg-slate-900/40"} backdrop-blur-md flex items-center justify-center z-[100] p-4`}
+      className={`fixed inset-0 ${isDark ? "bg-slate-950/80" : "bg-slate-900/40"} backdrop-blur-md flex items-center justify-center z-100 p-4`}
       onClick={onClose}
     >
       <style>{`
@@ -110,7 +126,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
         className={`max-w-lg w-full overflow-hidden rounded-[26px] border shadow-2xl contact-modal-card ${isDark ? "bg-[#0b1120] border-white/10 shadow-black/40" : "bg-white border-slate-200 shadow-slate-900/10"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`${isDark ? "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600" : "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600"} px-6 sm:px-7 py-5 relative contact-modal-header`}>
+        <div className={`${isDark ? "bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600" : "bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600"} px-6 sm:px-7 py-5 relative contact-modal-header`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-white">
@@ -227,10 +243,14 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.18em] transition-all cursor-pointer shadow-lg ${
-                isSubmitting
-                  ? "bg-violet-500/60 text-white"
-                  : "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white"
+              className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.18em] transition-all cursor-pointer shadow-lg border ${
+                isDark
+                  ? isSubmitting
+                    ? "bg-violet-500/60 text-white border-violet-400/30"
+                    : "bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white border-white/10"
+                  : isSubmitting
+                    ? "bg-slate-700 text-white border-slate-500"
+                    : "bg-slate-900 hover:bg-slate-800 text-white border-slate-900"
               }`}
             >
               <Send size={14} />

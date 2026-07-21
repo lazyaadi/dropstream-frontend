@@ -34,6 +34,15 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
     .slice(0, 2)
     .toUpperCase();
   const lockedMetaCls = "blur-[3px] opacity-40 select-none pointer-events-none";
+  const fmtCardTime = (date) => {
+    if (!date) return "";
+    return new Date(date).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -65,14 +74,14 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         ${isOverdue ? (theme === "light" ? "border-red-300 bg-red-50 shadow-red-100" : "border-red-500/50 shadow-red-900/20 bg-red-950/20") : ""}`}
     >
       {canEdit && (
-        <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all cursor-pointer
-              ${theme === "light" ? "border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50" : "border-slate-700/60 text-slate-400 hover:text-red-400 hover:bg-red-500/10"}`}
+            className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm backdrop-blur-sm
+              ${theme === "light" ? "border-gray-200 bg-white/90 text-gray-500 hover:text-red-500 hover:bg-red-50" : "border-slate-700/60 bg-slate-900/85 text-slate-300 hover:text-red-300 hover:bg-red-500/15"}`}
             title="Delete task"
           >
-            <X size={10} />
+            <X size={12} />
           </button>
         </div>
       )}
@@ -141,10 +150,10 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
             <div className={`relative w-full rounded-lg border overflow-hidden
               ${theme === "light" ? "border-gray-200 bg-white" : "border-slate-700/60 bg-slate-900/40"}`}
             >
-              <div className={`relative flex items-stretch gap-0 px-4 py-3 min-h-[92px]
-                ${theme === "light" ? "border-gray-200" : "border-slate-700/60"}`}
+                <div className={`relative grid grid-cols-2 gap-2 px-3 sm:px-4 py-3 min-h-23
+                  ${theme === "light" ? "border-gray-200" : "border-slate-700/60"}`}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
                     ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
                   >{isPro ? (creatorInitials || "?") : obfuscateText(0, "name").charAt(0)}</span>
@@ -153,24 +162,24 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
                     <span className={`text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       {isPro ? (task.addedBy || "Unknown") : obfuscateText(0, "name")}
                     </span>
-                    <div className={`flex items-center gap-1 text-[9px] ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                      <div className={`flex items-center gap-1 text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       <Clock size={9} className="shrink-0" />
-                      <span>{isPro ? (task.createdAt ? fmtFull(task.createdAt) : "—") : obfuscateText(1, "number")}</span>
+                        <span>{isPro ? (task.createdAt ? fmtCardTime(task.createdAt) : "—") : obfuscateText(1, "number")}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className={`ml-12 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <span className={`ml-0 sm:ml-12 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
                     ${theme === "light" ? "bg-emerald-100 text-emerald-700" : "bg-emerald-500/20 text-emerald-200"}`}
                   >{isPro ? (completedInitials || "?") : obfuscateText(2, "name").charAt(0)}</span>
-                  <div className={`flex flex-col gap-1 min-w-0 flex-1 items-start  ${!isPro ? lockedMetaCls : ""}`}>
+                    <div className={`flex flex-col gap-1 min-w-0 flex-1 items-start ${!isPro ? lockedMetaCls : ""}`}>
                     <span className={`text-[9px] font-black uppercase tracking-widest ${T.label}`}>Completed</span>
                     <span className={`text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       {isPro ? (task.completedBy || "Unknown") : obfuscateText(2, "name")}
                     </span>
-                    <div className={`flex items-center gap-1 text-[9px] ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                      <div className={`flex items-center gap-1 text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       <Clock size={9} className="shrink-0" />
-                      <span>{isPro ? (task.completedAt ? fmtFull(task.completedAt) : "—") : obfuscateText(3, "number")}</span>
+                        <span>{isPro ? (task.completedAt ? fmtCardTime(task.completedAt) : "—") : obfuscateText(3, "number")}</span>
                     </div>
                   </div>
                 </div>
@@ -235,18 +244,17 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
       </div>
 
       {showImage && task.image && createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+        <div className="fixed inset-0 z-99999 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-lg"
             onClick={() => setShowImage(false)}
           />
           <button
             onClick={() => setShowImage(false)}
-            className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-md cursor-pointer
-              ${theme === "light" ? "bg-white text-gray-700 border border-gray-200" : "bg-slate-800 text-slate-200 border border-slate-700"}`}
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-11 h-11 rounded-full flex items-center justify-center shadow-xl cursor-pointer bg-black/70 text-white border border-white/20 backdrop-blur-md"
             aria-label="Close image preview"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
           <img
             src={task.image}

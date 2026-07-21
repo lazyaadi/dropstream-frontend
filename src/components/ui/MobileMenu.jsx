@@ -1,5 +1,5 @@
 import React from "react";
-import { X, History, Users, Bell, Moon, LogOut, ChevronRight } from "lucide-react";
+import { X, History, Users, Moon, LogOut, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MobileMenu = ({
@@ -46,7 +46,7 @@ const MobileMenu = ({
         animate={{ x: 0 }}
         exit={{ x: "-100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-[60] ${T.bg} p-4 flex flex-col`}
+        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-60 ${T.bg} p-4 flex flex-col`}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -130,22 +130,11 @@ const MobileMenu = ({
                 <ChevronRight size={18} className={T.subText} />
               </button>
 
-              <button 
-                onClick={() => setIsMenuOpen(false)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
-              >
-                <div className={`p-2 rounded-lg ${T.iconBg}`}><Bell size={20} /></div>
-                <div className="flex-1 text-left">
-                  <p className={`font-bold ${T.text}`}>Notifications</p>
-                  <p className={`text-xs ${T.subText}`}>Alerts & reminders</p>
-                </div>
-                <ChevronRight size={18} className={T.subText} />
-              </button>
             </div>
           </div>
 
           <div className={`p-4 rounded-xl ${T.card} mt-4`}>
-            <p className={`text-xs font-bold uppercase ${T.subText} mb-3`}>TASKS IN PROGRESS</p>
+            <p className={`text-xs font-bold uppercase ${T.subText} mb-3`}>TASKS</p>
             <div className="space-y-2">
               {tasks && tasks.length > 0 ? (
                 tasks.slice(0, 5).map((task, idx) => (
