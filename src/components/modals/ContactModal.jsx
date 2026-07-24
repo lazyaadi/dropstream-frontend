@@ -15,6 +15,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState({ type: "", text: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSentDialog, setShowSentDialog] = useState(false);
 
   useEffect(() => {
     if (context?.userName && !name) setName(context.userName);
@@ -125,6 +126,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
         throw new Error(data?.error || "Failed to send message.");
       }
 
+      setShowSentDialog(true);
       setStatus({ type: "success", text: "Message sent. We will get back to you soon." });
       setMessage("");
     } catch (err) {
@@ -176,6 +178,32 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
         className={`max-w-lg w-full overflow-hidden rounded-[26px] border shadow-2xl contact-modal-card ${isDark ? "bg-[#0b1120] border-white/10 shadow-black/40" : "bg-white border-slate-200 shadow-slate-900/10"}`}
         onClick={(e) => e.stopPropagation()}
       >
+        {showSentDialog ? (
+          <div className="p-6 sm:p-8">
+            <div className={`rounded-3xl border p-6 sm:p-7 text-center shadow-xl ${isDark ? "bg-slate-950/90 border-emerald-500/20" : "bg-white border-emerald-200"}`}>
+              <div className={`mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center ${isDark ? "bg-emerald-500/15 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <h3 className={`text-lg sm:text-xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>Message Sent</h3>
+              <p className={`mt-2 text-sm sm:text-[14px] leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                {status.text || "Message sent. We will get back to you soon."}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSentDialog(false);
+                  onClose();
+                }}
+                className="mt-6 inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 text-[11px] sm:text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
+              >
+                Okay
+              </button>
+            </div>
+          </div>
+        ) : (
+        <>
         <div className={`${isDark ? "bg-linear-to-r from-indigo-600 via-violet-600 to-purple-600" : "bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600"} px-6 sm:px-7 py-5 relative contact-modal-header`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -272,7 +300,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
             Your email is only used to reply. We never share it.
           </div>
 
-          {status.text && (
+          {status.type === "error" && status.text && (
             <div
               className={`p-2.5 rounded-xl border text-[11px] font-bold ${status.type === "success"
                 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
@@ -308,6 +336,8 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
             </button>
           </div>
         </form>
+        </>
+        )}
       </motion.div>
     </motion.div>
   );
