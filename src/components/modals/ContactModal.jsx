@@ -111,11 +111,20 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
 
       clearTimeout(timeout);
 
+      let responseText = "";
+      try {
+        responseText = await res.clone().text();
+      } catch (readErr) {
+        console.warn("[contact-ui] could not read response body:", { requestId, message: readErr?.message });
+      }
+
       console.log("[contact-ui] contact response:", {
         requestId,
         ok: res.ok,
         status: res.status,
         statusText: res.statusText,
+        headers: Object.fromEntries(res.headers.entries()),
+        bodyPreview: responseText.slice(0, 500),
       });
 
       if (!res.ok) {
