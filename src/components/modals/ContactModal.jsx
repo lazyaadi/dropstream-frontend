@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle, Send, X } from "lucide-react";
+import { CheckCircle2, MessageCircle, Send, X } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -15,6 +15,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState({ type: "", text: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSentDialog, setShowSentDialog] = useState(false);
 
   useEffect(() => {
     if (context?.userName && !name) setName(context.userName);
@@ -125,7 +126,8 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
         throw new Error(data?.error || "Failed to send message.");
       }
 
-      setStatus({ type: "success", text: "Message sent. We will get back to you soon." });
+      setStatus({ type: "", text: "" });
+      setShowSentDialog(true);
       setMessage("");
     } catch (err) {
       const messageText = err?.name === "AbortError"
@@ -309,6 +311,40 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
             </button>
           </div>
         </form>
+
+        {showSentDialog && (
+          <div className="absolute inset-0 flex items-center justify-center p-5 bg-slate-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className={`w-full max-w-sm rounded-2xl border p-5 shadow-2xl ${isDark ? "bg-slate-900 border-white/10" : "bg-white border-slate-200"}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${isDark ? "bg-emerald-500/15 text-emerald-300" : "bg-emerald-100 text-emerald-700"}`}>
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <h3 className={`text-sm font-black tracking-wide ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+                    Message Sent
+                  </h3>
+                  <p className={`mt-1 text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                    We received your message and will get back to you soon.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowSentDialog(false)}
+                  className={`rounded-xl px-4 py-2 text-[11px] font-black uppercase tracking-[0.16em] transition ${isDark ? "bg-emerald-500/90 text-white hover:bg-emerald-400" : "bg-emerald-600 text-white hover:bg-emerald-500"}`}
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
         </>
       </motion.div>
     </motion.div>
