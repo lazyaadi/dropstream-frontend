@@ -28,6 +28,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
 
   const submitToContact = async (baseUrl, payload, signal) => {
     const target = baseUrl ? `${baseUrl}/api/contact` : "/api/contact";
+    console.log("[contact-ui] submitting to:", target, { baseUrl, hasSignal: Boolean(signal) });
     return fetch(target, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -76,10 +77,17 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
 
       let res = await submitToContact(apiBase, payload, controller.signal);
       if (res.status === 404 && apiBase) {
+        console.warn("[contact-ui] primary contact URL returned 404, falling back to relative /api/contact");
         res = await submitToContact("", payload, controller.signal);
       }
 
       clearTimeout(timeout);
+
+      console.log("[contact-ui] contact response:", {
+        ok: res.ok,
+        status: res.status,
+        statusText: res.statusText,
+      });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -89,7 +97,11 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
       setMessage("");
       setStatus({ type: "success", text: "Message sent. We will get back to you soon." });
     } catch (err) {
-      setStatus({ type: "error", text: err?.message || "Failed to send message." });
+      const messageText = err?.name === "AbortError"
+        ? "Request timed out before the server responded."
+        : (err?.message || "Failed to send message.");
+      console.error("[contact-ui] submit failed:", err);
+      setStatus({ type: "error", text: messageText });
     } finally {
       clearTimeout(timeout);
       setIsSubmitting(false);
