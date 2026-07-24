@@ -65,7 +65,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     setIsSubmitting(true);
     const requestId = globalThis.crypto?.randomUUID?.() || `contact-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const controller = new AbortController();
-    const timeoutMs = 60000;
+    const timeoutMs = 15000;
     const timeout = setTimeout(() => {
       console.warn("[contact-ui] timeout reached, aborting request", { timeoutMs, requestId });
       controller.abort("contact request timeout");
