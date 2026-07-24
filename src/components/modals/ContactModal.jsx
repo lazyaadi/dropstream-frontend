@@ -21,24 +21,28 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     if (context?.userEmail && !email) setEmail(context.userEmail);
   }, [context, name, email]);
 
-  const apiBase = useMemo(() => {
-    if (!serverUrl) return "";
-    return String(serverUrl).replace(/\/$/, "");
-  }, [serverUrl]);
+  const contactToEmail = useMemo(() => {
+    const supportEmail = context?.supportEmail || "abdullah3807654@gmail.com";
+    const subjectText = subject.trim() || "SyncBoard Support";
+    const messageText = [
+      `Name: ${name.trim() || context?.userName || "Anonymous"}`,
+      `Email: ${email.trim() || context?.userEmail || ""}`,
+      context?.workspaceName ? `Workspace: ${context.workspaceName}` : "",
+      context?.role ? `Role: ${context.role}` : "",
+      "",
+      message.trim(),
+    ].filter(Boolean).join("\n");
 
-  const submitToContact = async (baseUrl, payload, signal) => {
-    const target = baseUrl ? `${baseUrl}/api/contact` : "/api/contact";
-    console.log("[contact-ui] submitting to:", target, { baseUrl, hasSignal: Boolean(signal) });
-    return fetch(target, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Contact-Request-ID": payload.requestId,
-      },
-      body: JSON.stringify(payload),
-      signal,
+    const params = new URLSearchParams({
+      subject: subjectText,
+      body: messageText,
     });
-  };
+
+    return {
+      supportEmail,
+      mailto: `mailto:${supportEmail}?${params.toString()}`,
+    };
+  }, [context, email, message, name, subject]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,93 +67,25 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
     }
 
     setIsSubmitting(true);
-    const requestId = globalThis.crypto?.randomUUID?.() || `contact-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const controller = new AbortController();
-    const timeoutMs = 15000;
-    const timeout = setTimeout(() => {
-      console.warn("[contact-ui] timeout reached, aborting request", { timeoutMs, requestId });
-      controller.abort("contact request timeout");
-    }, timeoutMs);
     try {
-      const payload = {
-        requestId,
-        name: trimmedName,
-        email: trimmedEmail,
-        subject: trimmedSubject,
-        message: trimmedMessage,
-        website,
-        workspaceName: context?.workspaceName || "",
-        userName: context?.userName || "",
-        userEmail: context?.userEmail || "",
-        role: context?.role || "",
-      };
-
-      console.groupCollapsed("[contact-ui] submit attempt", requestId);
-      console.log("[contact-ui] payload summary:", {
-        requestId,
-        apiBase,
-        target: apiBase ? `${apiBase}/api/contact` : "/api/contact",
+      console.log("[contact-ui] opening mailto:", {
+        to: contactToEmail.supportEmail,
+        subject: trimmedSubject || "SyncBoard Support",
         origin: globalThis.location?.origin || "",
         online: navigator.onLine,
-        visibilityState: document.visibilityState,
-        name: trimmedName,
-        email: trimmedEmail,
-        subject: trimmedSubject,
-        messageLength: trimmedMessage.length,
-      });
-      console.log("[contact-ui] sending request body keys:", Object.keys(payload));
-
-      console.time(`[contact-ui] fetch ${requestId}`);
-      let res = await submitToContact(apiBase, payload, controller.signal);
-      console.timeEnd(`[contact-ui] fetch ${requestId}`);
-      if (res.status === 404 && apiBase) {
-        console.warn("[contact-ui] primary contact URL returned 404, falling back to relative /api/contact");
-        console.time(`[contact-ui] fallback fetch ${requestId}`);
-        res = await submitToContact("", payload, controller.signal);
-        console.timeEnd(`[contact-ui] fallback fetch ${requestId}`);
-      }
-
-      clearTimeout(timeout);
-
-      let responseText = "";
-      try {
-        responseText = await res.clone().text();
-      } catch (readErr) {
-        console.warn("[contact-ui] could not read response body:", { requestId, message: readErr?.message });
-      }
-
-      console.log("[contact-ui] contact response:", {
-        requestId,
-        ok: res.ok,
-        status: res.status,
-        statusText: res.statusText,
-        headers: Object.fromEntries(res.headers.entries()),
-        bodyPreview: responseText.slice(0, 500),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to send message.");
+      const opened = typeof window !== "undefined" ? window.open(contactToEmail.mailto, "_blank", "noopener,noreferrer") : null;
+      if (!opened) {
+        window.location.href = contactToEmail.mailto;
       }
 
+      setStatus({ type: "success", text: "Your email app should open with the message prefilled." });
       setMessage("");
-      setStatus({ type: "success", text: "Message sent. We will get back to you soon." });
     } catch (err) {
-      console.warn("[contact-ui] submit error details:", {
-        requestId,
-        name: err?.name,
-        message: err?.message,
-        cause: err?.cause,
-        stack: err?.stack,
-      });
-      const messageText = err?.name === "AbortError"
-        ? "Request timed out before the server responded."
-        : (err?.message || "Failed to send message.");
-      console.error("[contact-ui] submit failed:", { requestId, error: err });
-      setStatus({ type: "error", text: messageText });
+      console.error("[contact-ui] mailto failed:", err);
+      setStatus({ type: "error", text: "Could not open your email app." });
     } finally {
-      console.groupEnd();
-      clearTimeout(timeout);
       setIsSubmitting(false);
     }
   };
