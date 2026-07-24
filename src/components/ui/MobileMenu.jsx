@@ -8,11 +8,13 @@ const MobileMenu = ({
   userName,
   role,
   isPro,
+  proExpiresAt,
   workspaceName,
   tasks,
   progress,
   setShowHistory,
   setShowMembers,
+  onOpenProModal,
   handleLeave,
   setIsMenuOpen,
 }) => {
@@ -31,6 +33,12 @@ const MobileMenu = ({
     divider: "border-gray-700",
     iconBg: "bg-gray-700/50",
   };
+
+  const daysLeft = proExpiresAt
+    ? Math.max(0, Math.ceil((new Date(proExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+  const hasExpiry = daysLeft !== null;
+  const daysLabel = daysLeft === 1 ? "Day Left" : "Days Left";
 
   return (
     <>
@@ -85,6 +93,34 @@ const MobileMenu = ({
                 <span className="ml-auto text-xs font-bold bg-amber-500/20 text-amber-500 px-2 py-1 rounded-md">PRO</span>
               )}
             </div>
+            {isPro && (
+              <div className={`mt-4 rounded-xl border px-3 py-3 ${theme === "light" ? "bg-amber-50 border-amber-200" : "bg-amber-500/10 border-amber-500/20"}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${theme === "light" ? "text-amber-700" : "text-amber-400"}`}>Pro Active</p>
+                    <p className={`text-[11px] font-semibold mt-1 ${T.text}`}>You have {daysLeft === null ? "full Pro access" : `${daysLeft} ${daysLabel.toLowerCase()}`}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-[18px] font-black leading-none ${theme === "light" ? "text-amber-600" : "text-amber-400"}`}>{daysLeft === null ? "--" : daysLeft}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest ${T.subText}`}>{daysLabel}</p>
+                  </div>
+                </div>
+                {hasExpiry && daysLeft > 0 && (
+                  <p className={`mt-2 text-[10px] font-bold ${theme === "light" ? "text-amber-700" : "text-amber-300"}`}>
+                    Expires on {new Date(proExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                )}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenProModal?.();
+                  }}
+                  className={`mt-3 w-full rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-widest transition ${theme === "light" ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"}`}
+                >
+                  View Pro details
+                </button>
+              </div>
+            )}
           </div>
 
           <div className={`p-4 rounded-xl ${T.card} mb-4`}>

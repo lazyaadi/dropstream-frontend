@@ -1067,11 +1067,13 @@ function AppInner() {
           userName={userName}
           role={role}
           isPro={isPro}
+          proExpiresAt={proExpiresAt}
           workspaceName={workspaceName}
           tasks={tasks || []}
           progress={progress || 0}
           setShowHistory={setShowHistory}
           setShowMembers={setShowMembers}
+          onOpenProModal={() => setShowProModal(true)}
           handleLeave={handleLeave}
           setIsMenuOpen={setShowMobileMenu}
         />
