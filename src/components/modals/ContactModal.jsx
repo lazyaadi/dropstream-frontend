@@ -69,7 +69,7 @@ export default function ContactModal({ onClose, theme, serverUrl, context }) {
       const timeoutMs = 15000;
       const timeout = setTimeout(() => {
         console.warn("[contact-ui] timeout reached, aborting request", { timeoutMs, requestId });
-        controller.abort("contact request timeout");
+        controller.abort(new DOMException("contact request timeout", "AbortError"));
       }, timeoutMs);
 
       const payload = {
