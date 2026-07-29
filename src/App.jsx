@@ -290,6 +290,7 @@ function AppInner() {
   const wsPinRef = useRef(wsPin);
   const authMethodRef = useRef(authMethod);
   const googleButtonRef = useRef(null);
+  const pendingGoogleAuthTokenRef = useRef("");
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
@@ -363,6 +364,29 @@ function AppInner() {
       }
     }
 
+    const googleParams = new URLSearchParams(window.location.search);
+    const googleToken = googleParams.get("google_auth_token");
+    const googleError = googleParams.get("google_auth_error");
+    if (googleToken) {
+      pendingGoogleAuthTokenRef.current = googleToken;
+      googleParams.delete("google_auth_token");
+      googleParams.delete("google_auth_error");
+      const cleanUrl = `${window.location.pathname}${googleParams.toString() ? `?${googleParams.toString()}` : ""}${window.location.hash || ""}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+      setAuthMethod("google");
+      setAuthLoading(true);
+      setAuthError("");
+      if (socket.connected) {
+        socket.emit("auth_google_redirect_token", { token: googleToken });
+      }
+    } else if (googleError) {
+      googleParams.delete("google_auth_token");
+      googleParams.delete("google_auth_error");
+      const cleanUrl = `${window.location.pathname}${googleParams.toString() ? `?${googleParams.toString()}` : ""}${window.location.hash || ""}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+      setAuthError(decodeURIComponent(googleError));
+    }
+
     const us = localStorage.getItem(SESSION_KEY);
     if (us) {
       try {
@@ -388,6 +412,12 @@ function AppInner() {
     socket.on("connect", () => {
       if (!isJoined) { setError(""); setAuthError(""); }
 
+      if (pendingGoogleAuthTokenRef.current) {
+        const token = pendingGoogleAuthTokenRef.current;
+        pendingGoogleAuthTokenRef.current = "";
+        socket.emit("auth_google_redirect_token", { token });
+      }
+
       const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
       if (activeSession) {
         try {
@@ -405,7 +435,7 @@ function AppInner() {
     });
 
     socket.on("auth_success", (data) => {
-      setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false);
+      setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
       setIsPro(!!data.isPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
@@ -417,6 +447,7 @@ function AppInner() {
 
     socket.on("auth_error", (msg) => {
       setAuthLoading(false); setAutoJoining(false);
+      pendingGoogleAuthTokenRef.current = "";
       setAuthError(msg || "Authentication failed.");
       setAuthStep(authMethodRef.current === "google" ? "email" : "name");
       setAuthMethod("password");
@@ -424,6 +455,7 @@ function AppInner() {
 
     socket.on("auth_google_error", (msg) => {
       setAuthLoading(false); setAutoJoining(false);
+      pendingGoogleAuthTokenRef.current = "";
       setAuthError(msg || "Google sign-in failed.");
       setAuthStep("email");
       setAuthMethod("google");
@@ -594,18 +626,8 @@ function AppInner() {
 
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
-          callback: (response) => {
-            const credential = response?.credential || "";
-            if (!credential) {
-              setAuthLoading(false);
-              setAuthError("Google sign-in did not return a credential.");
-              return;
-            }
-
-            setAuthError("");
-            setAuthLoading(true);
-            socket.emit("auth_google", { credential, name: userNameRef.current.trim() });
-          },
+          ux_mode: "redirect",
+          login_uri: `${SERVER_URL}/auth/google/callback`,
           auto_select: false,
           cancel_on_tap_outside: true,
         });
@@ -825,7 +847,7 @@ function AppInner() {
     return new Date(proExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }, [proExpiresAt]);
 
-  if ((autoJoining && !isJoined) || (authLoading && authMethod !== "google")) {
+  if ((autoJoining && !isJoined) || authLoading) {
     return (
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
         <ParticleBg theme={theme} />
