@@ -15,6 +15,7 @@ import {
 // ─── CONSTANTS ───
 const WORKER_URL = import.meta.env?.VITE_WORKER_URL || "https://rana-ai.ak3807654.workers.dev";
 const SERVER_URL = import.meta.env?.VITE_SERVER_URL || (import.meta.env?.DEV ? "http://localhost:3001" : "https://dropstream-backend.onrender.com");
+const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "";
 const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
 const PRO_PIN_KEY = "sb_pro_pin";
@@ -66,6 +67,43 @@ const TL = {
   panelBg: "bg-white border-gray-200 shadow-sm",
   text: "text-gray-800", loginCard: "bg-white/95 border-gray-200",
   label: "text-gray-500", divider: "border-gray-200",
+};
+
+let googleIdentityScriptPromise = null;
+
+const loadGoogleIdentityScript = () => {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Google sign-in is only available in the browser."));
+  }
+
+  if (window.google?.accounts?.id) return Promise.resolve();
+
+  if (!googleIdentityScriptPromise) {
+    googleIdentityScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-google-identity="true"]');
+      if (existing) {
+        if (window.google?.accounts?.id) {
+          resolve();
+          return;
+        }
+
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error("Failed to load Google sign-in script.")), { once: true });
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.dataset.googleIdentity = "true";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Google sign-in script."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return googleIdentityScriptPromise;
 };
 
 // ─── UTILS ───
@@ -192,6 +230,7 @@ function AppInner() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError]     = useState("");
   const [authStep, setAuthStep]       = useState("name");
+  const [authMethod, setAuthMethod]   = useState("password");
   const [showPass, setShowPass]       = useState(false);
 
   const [workspaceName, setWorkspaceName] = useState("");
@@ -249,11 +288,13 @@ function AppInner() {
   const workspaceNameRef = useRef(workspaceName);
   const userEmailRef = useRef(userEmail);
   const wsPinRef = useRef(wsPin);
+  const authMethodRef = useRef(authMethod);
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
   useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
   useEffect(() => { wsPinRef.current = wsPin; }, [wsPin]);
+  useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -363,7 +404,7 @@ function AppInner() {
     });
 
     socket.on("auth_success", (data) => {
-      setAuthLoading(false); setAuthError("");
+      setAuthLoading(false); setAuthError(""); setAuthMethod("password");
       setIsPro(!!data.isPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
@@ -375,7 +416,16 @@ function AppInner() {
 
     socket.on("auth_error", (msg) => {
       setAuthLoading(false); setAutoJoining(false);
-      setAuthError(msg || "Authentication failed."); setAuthStep("name");
+      setAuthError(msg || "Authentication failed.");
+      setAuthStep(authMethodRef.current === "google" ? "email" : "name");
+      setAuthMethod("password");
+    });
+
+    socket.on("auth_google_error", (msg) => {
+      setAuthLoading(false); setAutoJoining(false);
+      setAuthError(msg || "Google sign-in failed.");
+      setAuthStep("email");
+      setAuthMethod("google");
     });
 
     socket.on("task_count_update", ({ taskCount, resetAt }) => {
@@ -523,7 +573,7 @@ function AppInner() {
 
     return () => {
       if (boardHydrateTimerRef.current) clearTimeout(boardHydrateTimerRef.current);
-      ["connect","auth_success","auth_error","task_count_update","task_limit_reached","pro_activated",
+       ["connect","auth_success","auth_error","auth_google_error","task_count_update","task_limit_reached","pro_activated",
        "load_workspace","receive_update","users_update","members_update","history_update","history_cleared",
        "pro_activate_error","pro_deactivated","pro_deactivate_error","error_msg","permission_denied","kicked",
        "typing_update","typing_clear","reconnect"]
@@ -531,18 +581,93 @@ function AppInner() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authReady || authStep !== "email" || !GOOGLE_CLIENT_ID) return;
+
+    let cancelled = false;
+
+    const initGoogle = async () => {
+      try {
+        await loadGoogleIdentityScript();
+        if (cancelled || !window.google?.accounts?.id) return;
+
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => {
+            const credential = response?.credential || "";
+            if (!credential) {
+              setAuthLoading(false);
+              setAuthError("Google sign-in did not return a credential.");
+              return;
+            }
+
+            setAuthError("");
+            setAuthLoading(true);
+            socket.emit("auth_google", { credential, name: userNameRef.current.trim() });
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+      } catch (err) {
+        if (!cancelled) {
+          setAuthError(err?.message || "Google sign-in failed to load.");
+        }
+      }
+    };
+
+    initGoogle();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, authStep]);
+
   const handleNameNext = useCallback(() => {
     if (!userName.trim()) return setAuthError("Your name is required.");
-    setAuthError(""); setAuthStep("email");
+    setAuthError(""); setAuthMethod("password"); setAuthStep("email");
   }, [userName]);
 
   const handleAuth = useCallback(() => {
     const emailErr = validateEmail(userEmail);
     if (emailErr) return setAuthError(emailErr);
     if (!userPassword.trim()) return setAuthError("Password is required.");
-    setAuthLoading(true); setAuthError("");
+    setAuthMethod("password"); setAuthLoading(true); setAuthError("");
     socket.emit("auth_user", { email: userEmail.trim(), password: userPassword.trim(), name: userName.trim() });
   }, [userEmail, userPassword, userName]);
+
+  const handleGoogleAuth = useCallback(async () => {
+    if (!GOOGLE_CLIENT_ID) {
+      setAuthError("Google sign-in is not configured.");
+      return;
+    }
+
+    setAuthMethod("google");
+    setAuthError("");
+    setAuthLoading(true);
+
+    try {
+      await loadGoogleIdentityScript();
+      if (!window.google?.accounts?.id) {
+        throw new Error("Google sign-in is unavailable.");
+      }
+
+      window.google.accounts.id.prompt((notification) => {
+        if (!notification) return;
+        const notDisplayed = notification.isNotDisplayed?.();
+        const skipped = notification.isSkippedMoment?.();
+        const dismissed = notification.isDismissedMoment?.();
+        if (notDisplayed || skipped || dismissed) {
+          setAuthLoading(false);
+          if (notDisplayed) {
+            setAuthError("Google sign-in could not be shown. Try again or use email and password.");
+          }
+        }
+      });
+    } catch (err) {
+      setAuthLoading(false);
+      setAuthError(err?.message || "Google sign-in failed to start.");
+    }
+  }, []);
 
   const handleAction = useCallback(() => {
     if (!authReady) return setError("Please sign in first.");
@@ -721,7 +846,7 @@ function AppInner() {
     return new Date(proExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }, [proExpiresAt]);
 
-  if ((autoJoining && !isJoined) || authLoading) {
+  if ((autoJoining && !isJoined) || (authLoading && authMethod !== "google")) {
     return (
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
         <ParticleBg theme={theme} />
@@ -874,6 +999,28 @@ function AppInner() {
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30">
                   {authLoading ? "Loading…" : "Login"}
                 </button>
+                <div className={`flex items-center gap-3 py-1 ${theme === "light" ? "text-gray-300" : "text-slate-700"}`}>
+                  <div className="flex-1 h-px bg-current opacity-50" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-70">or</span>
+                  <div className="flex-1 h-px bg-current opacity-50" />
+                </div>
+                <button onClick={handleGoogleAuth} disabled={authLoading}
+                  className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer border-2
+                    ${theme === "light"
+                      ? "bg-white border-gray-300 text-gray-800 hover:bg-gray-50"
+                      : "bg-slate-800/70 border-slate-700 text-slate-100 hover:bg-slate-700/80"
+                    }`}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+                      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-.8 2.5-1.7 3.2v2.6h2.8c1.7-1.6 2.7-4 2.7-6.8 0-.6 0-1.2-.1-1.8H12z" />
+                      <path fill="#34A853" d="M12 21c2.4 0 4.4-.8 5.9-2.1l-2.8-2.6c-.8.5-1.8.8-3.1.8-2.4 0-4.5-1.6-5.2-3.8H4v2.7C5.5 18.9 8.5 21 12 21z" />
+                      <path fill="#FBBC05" d="M6.8 13.3c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V6.4H4C3.4 7.8 3 9.4 3 11.2s.4 3.4 1 4.8l2.8-2.7z" />
+                      <path fill="#4285F4" d="M12 5.5c1.3 0 2.4.4 3.3 1.2l2.5-2.5C16.4 2.9 14.4 2 12 2 8.5 2 5.5 4.1 4 7.4l2.8 2.7c.7-2.2 2.8-4.6 5.2-4.6z" />
+                    </svg>
+                  </span>
+                  {authLoading && authMethod === "google" ? "Opening Google…" : "Sign in with Google"}
+                </button>
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
                   className={`w-full text-[9px] font-black uppercase tracking-widest p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}>
                   ← Back
@@ -895,7 +1042,7 @@ function AppInner() {
 
                     <div className="flex gap-3 mt-6">
                       <button onClick={() => setView("create")}
-                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-black text-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
+                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-black text-sm bg-linear-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
                         <Plus size={18}/><span>New Workspace</span>
                       </button>
                       <button onClick={() => setView("join")}
@@ -925,7 +1072,7 @@ function AppInner() {
                       className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer mt-4
                         ${isPro
                           ? `${theme === "light" ? "bg-amber-100 border-2 border-amber-400 text-amber-700" : "bg-amber-500/15 border-2 border-amber-500/50 text-amber-400"}`
-                          : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
+                          : `bg-linear-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
                         }`}
                     >
                       <span>{isPro ? "Pro Activated" : "Upgrade to Pro"}</span>
@@ -1081,7 +1228,7 @@ function AppInner() {
 
       <QuotaBanner userTaskCount={userTaskCount} limit={limit} userResetDate={userResetDate} isPro={isPro} onUpgrade={() => setShowProModal(true)} theme={theme} />
 
-      <main className="relative z-10 max-w-[1440px] mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
+      <main className="relative z-10 max-w-360 mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -1128,7 +1275,7 @@ function AppInner() {
             {(role === "member" || role === "admin") && (
               <button onClick={tryOpenAdd}
                 title="Press 'N' to add task"
-                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[0.1em] cursor-pointer shadow-lg shadow-blue-900/30 active:scale-95 transition-all whitespace-nowrap">
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer shadow-lg shadow-blue-900/30 active:scale-95 transition-all whitespace-nowrap">
                 <Plus size={12}/><span className="hidden sm:inline">New Task</span><span className="sm:hidden">Add</span>
                 <span className="hidden lg:inline text-[8px] opacity-60 ml-1 border border-white/20 px-1 py-0.5 rounded">N</span>
               </button>
