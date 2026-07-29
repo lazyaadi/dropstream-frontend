@@ -289,6 +289,7 @@ function AppInner() {
   const userEmailRef = useRef(userEmail);
   const wsPinRef = useRef(wsPin);
   const authMethodRef = useRef(authMethod);
+  const googleButtonRef = useRef(null);
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
@@ -608,6 +609,18 @@ function AppInner() {
           auto_select: false,
           cancel_on_tap_outside: true,
         });
+
+        if (googleButtonRef.current) {
+          googleButtonRef.current.innerHTML = "";
+          window.google.accounts.id.renderButton(googleButtonRef.current, {
+            theme: theme === "light" ? "outline" : "outline",
+            size: "large",
+            text: "continue_with",
+            shape: "rectangular",
+            width: googleButtonRef.current.clientWidth || 320,
+            locale: "en",
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           setAuthError(err?.message || "Google sign-in failed to load.");
@@ -634,40 +647,6 @@ function AppInner() {
     setAuthMethod("password"); setAuthLoading(true); setAuthError("");
     socket.emit("auth_user", { email: userEmail.trim(), password: userPassword.trim(), name: userName.trim() });
   }, [userEmail, userPassword, userName]);
-
-  const handleGoogleAuth = useCallback(async () => {
-    if (!GOOGLE_CLIENT_ID) {
-      setAuthError("Google sign-in is not configured.");
-      return;
-    }
-
-    setAuthMethod("google");
-    setAuthError("");
-    setAuthLoading(true);
-
-    try {
-      await loadGoogleIdentityScript();
-      if (!window.google?.accounts?.id) {
-        throw new Error("Google sign-in is unavailable.");
-      }
-
-      window.google.accounts.id.prompt((notification) => {
-        if (!notification) return;
-        const notDisplayed = notification.isNotDisplayed?.();
-        const skipped = notification.isSkippedMoment?.();
-        const dismissed = notification.isDismissedMoment?.();
-        if (notDisplayed || skipped || dismissed) {
-          setAuthLoading(false);
-          if (notDisplayed) {
-            setAuthError("Google sign-in could not be shown. Try again or use email and password.");
-          }
-        }
-      });
-    } catch (err) {
-      setAuthLoading(false);
-      setAuthError(err?.message || "Google sign-in failed to start.");
-    }
-  }, []);
 
   const handleAction = useCallback(() => {
     if (!authReady) return setError("Please sign in first.");
@@ -1004,23 +983,10 @@ function AppInner() {
                   <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-70">or</span>
                   <div className="flex-1 h-px bg-current opacity-50" />
                 </div>
-                <button onClick={handleGoogleAuth} disabled={authLoading}
-                  className={`w-full flex items-center justify-center gap-2 p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer border-2
-                    ${theme === "light"
-                      ? "bg-white border-gray-300 text-gray-800 hover:bg-gray-50"
-                      : "bg-slate-800/70 border-slate-700 text-slate-100 hover:bg-slate-700/80"
-                    }`}
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-                      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-.8 2.5-1.7 3.2v2.6h2.8c1.7-1.6 2.7-4 2.7-6.8 0-.6 0-1.2-.1-1.8H12z" />
-                      <path fill="#34A853" d="M12 21c2.4 0 4.4-.8 5.9-2.1l-2.8-2.6c-.8.5-1.8.8-3.1.8-2.4 0-4.5-1.6-5.2-3.8H4v2.7C5.5 18.9 8.5 21 12 21z" />
-                      <path fill="#FBBC05" d="M6.8 13.3c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V6.4H4C3.4 7.8 3 9.4 3 11.2s.4 3.4 1 4.8l2.8-2.7z" />
-                      <path fill="#4285F4" d="M12 5.5c1.3 0 2.4.4 3.3 1.2l2.5-2.5C16.4 2.9 14.4 2 12 2 8.5 2 5.5 4.1 4 7.4l2.8 2.7c.7-2.2 2.8-4.6 5.2-4.6z" />
-                    </svg>
-                  </span>
-                  {authLoading && authMethod === "google" ? "Opening Google…" : "Sign in with Google"}
-                </button>
+                <div
+                  ref={googleButtonRef}
+                  className={`w-full flex items-center justify-center rounded-xl border-2 p-2.5 overflow-hidden ${theme === "light" ? "bg-white border-gray-300" : "bg-slate-800/70 border-slate-700"}`}
+                />
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
                   className={`w-full text-[9px] font-black uppercase tracking-widest p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}>
                   ← Back
