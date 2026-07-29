@@ -405,7 +405,7 @@ function AppInner() {
     });
 
     socket.on("auth_success", (data) => {
-      setAuthLoading(false); setAuthError(""); setAuthMethod("password");
+      setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false);
       setIsPro(!!data.isPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
