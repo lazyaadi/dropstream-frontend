@@ -1,7 +1,15 @@
 [build]
-  base = "."
-  command = "npm install && npm run build"
+  # Tell Netlify the code lives in the client subfolder
+  base = "client"
+  
+  # Netlify automatically runs npm install inside base ('client')
+  command = "npm run build"
+  
+  # Relative to the base directory ('client/dist')
   publish = "dist"
 
-[context.production.environment]
-  NODE_ENV = "production"
+# Redirects all traffic to index.html for Single Page Application (SPA) routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
