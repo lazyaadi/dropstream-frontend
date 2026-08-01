@@ -1,11 +1,7 @@
 [build]
-  # Run install and build inside the client folder
-  command = "cd client && npm install && npm run build"
-  
-  # Publish relative to the repository root
-  publish = "client/dist"
+  command = "npm install && npm run build"
+  publish = "dist"
 
-# Handle SPA client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
