@@ -1,14 +1,11 @@
 [build]
-  # Tell Netlify the code lives in the client subfolder
-  base = "client"
+  # Run install and build inside the client folder
+  command = "cd client && npm install && npm run build"
   
-  # Netlify automatically runs npm install inside base ('client')
-  command = "npm run build"
-  
-  # Relative to the base directory ('client/dist')
-  publish = "dist"
+  # Publish relative to the repository root
+  publish = "client/dist"
 
-# Redirects all traffic to index.html for Single Page Application (SPA) routing
+# Handle SPA client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
