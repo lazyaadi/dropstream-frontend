@@ -11,7 +11,7 @@ export default function QuotaBanner({ userTaskCount, limit, userResetDate, isPro
     : isWarning
     ? "bg-amber-500/10 border-amber-500/30"
     : theme === "light"
-    ? "bg-white border-gray-200 shadow-sm"
+    ? "bg-white  border-gray-200 shadow-sm"
     : "bg-slate-800/60 border-slate-700/50";
 
   const textClass = isExhausted

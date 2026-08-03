@@ -14,7 +14,10 @@ import {
 
 // ─── CONSTANTS ───
 const WORKER_URL = import.meta.env?.VITE_WORKER_URL || "https://rana-ai.ak3807654.workers.dev";
-const SERVER_URL = import.meta.env?.VITE_SERVER_URL || (import.meta.env?.DEV ? "http://localhost:3001" : "https://dropstream-backend.onrender.com");
+const DEFAULT_SERVER_URL = import.meta.env?.DEV
+  ? "http://localhost:3001"
+  : (typeof window !== "undefined" ? window.location.origin : "http://localhost:3001");
+const SERVER_URL = import.meta.env?.VITE_SERVER_URL || DEFAULT_SERVER_URL;
 const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "";
 const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
