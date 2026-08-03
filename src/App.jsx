@@ -90,8 +90,10 @@ const loadGoogleIdentityScript = () => {
           return;
         }
 
-        existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener("error", () => reject(new Error("Failed to load Google sign-in script.")), { once: true });
+        const handleLoad = () => resolve();
+        const handleError = () => reject(new Error("Failed to load Google sign-in script."));
+        existing.addEventListener("load", handleLoad, { once: true });
+        existing.addEventListener("error", handleError, { once: true });
         return;
       }
 
@@ -131,10 +133,6 @@ const fmtDateTime = (date) => {
   return new Date(date).toLocaleString("en-US", {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
-};
-
-const obfuscateText = (seed = 0, type = "name") => {
-  return type === "number" ? "••••••••••" : "••••••••••";
 };
 
 const FLOAT_PANEL_CLASS = "fixed left-4 top-20 z-[90] w-64 sm:w-72 rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto";
@@ -609,10 +607,32 @@ function AppInner() {
 
     return () => {
       if (boardHydrateTimerRef.current) clearTimeout(boardHydrateTimerRef.current);
-       ["connect","auth_success","auth_error","auth_google_error","task_count_update","task_limit_reached","pro_activated",
-       "load_workspace","receive_update","users_update","members_update","history_update","history_cleared",
-       "pro_activate_error","pro_deactivated","pro_deactivate_error","error_msg","permission_denied","kicked",
-       "typing_update","typing_clear","reconnect"]
+      const socketEvents = [
+        "connect",
+        "auth_success",
+        "auth_error",
+        "auth_google_error",
+        "task_count_update",
+        "task_limit_reached",
+        "pro_activated",
+        "load_workspace",
+        "receive_update",
+        "users_update",
+        "members_update",
+        "history_update",
+        "history_cleared",
+        "pro_activate_error",
+        "pro_deactivated",
+        "pro_deactivate_error",
+        "error_msg",
+        "permission_denied",
+        "kicked",
+        "typing_update",
+        "typing_clear",
+        "reconnect",
+      ];
+
+      socketEvents
         .forEach(ev => socket.off(ev));
     };
   }, []);
