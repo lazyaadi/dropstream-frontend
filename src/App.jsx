@@ -1065,12 +1065,9 @@ function AppInner() {
               <div className="space-y-3">
                 {view === "start" ? (
                   <div className="space-y-0">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className={`rounded-full px-3 py-1.5 flex items-center justify-center text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] text-white shrink-0 ${theme === "light" ? "bg-blue-600" : "bg-blue-500"}`}>Step 3 · Workspace</div>
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Workspace</p>
-                        <p className={`text-[9px] ${T.label} mt-0.5`}>Create new or join existing.</p>
-                      </div>
+                    <div className="mb-6 text-left">
+                      <p className={`text-xs font-semibold uppercase tracking-wider ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Workspace</p>
+                      <p className={`text-[10px] ${T.label} mt-0.5`}>Create new or join existing.</p>
                     </div>
 
                     <div className="flex gap-3 mt-6">

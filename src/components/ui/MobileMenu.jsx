@@ -41,12 +41,6 @@ const MobileMenu = ({
     : null;
   const hasExpiry = daysLeft !== null;
   const daysLabel = daysLeft === 1 ? "Day Left" : "Days Left";
-  const taskGroups = [
-    { id: "todo", label: "TO DO", color: "text-blue-500", ring: "border-blue-500/20 bg-blue-500/10" },
-    { id: "in-progress", label: "IN PROGRESS", color: "text-amber-500", ring: "border-amber-500/20 bg-amber-500/10" },
-    { id: "done", label: "DONE", color: "text-emerald-500", ring: "border-emerald-500/20 bg-emerald-500/10" },
-  ];
-
   return (
     <>
       <motion.div
@@ -61,7 +55,7 @@ const MobileMenu = ({
         animate={{ x: 0 }}
         exit={{ x: "-100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-60 ${T.bg} p-4 flex flex-col`}
+        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-60 ${T.bg} p-4 flex flex-col font-sans`}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -152,8 +146,7 @@ const MobileMenu = ({
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><History size={20} /></div>
                 <div className="flex-1 text-left">
-                  <p className={`text-[13px] font-semibold ${T.text}`}>History</p>
-                  <p className={`text-[10px] ${T.subText}`}>Recent activity log</p>
+                  <p className={`text-sm font-medium ${T.text}`}>History</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
@@ -167,8 +160,7 @@ const MobileMenu = ({
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><Users size={20} /></div>
                 <div className="flex-1 text-left">
-                  <p className={`text-[13px] font-semibold ${T.text}`}>Team</p>
-                  <p className={`text-[10px] ${T.subText}`}>Members & permissions</p>
+                  <p className={`text-sm font-medium ${T.text}`}>Team</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
@@ -184,8 +176,7 @@ const MobileMenu = ({
                   <Users size={20} className={theme === "light" ? "text-blue-600" : "text-blue-300"} />
                 </div>
                 <div className="flex-1 text-left min-w-0">
-                  <p className={`text-[13px] font-semibold ${T.text}`}>Who&apos;s Online</p>
-                  <p className={`text-[10px] ${T.subText}`}>{(onlineUsers || []).length} active teammate{(onlineUsers || []).length === 1 ? "" : "s"}</p>
+                  <p className={`text-sm font-medium ${T.text}`}>Who&apos;s Online</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
@@ -194,32 +185,22 @@ const MobileMenu = ({
           </div>
 
           <div className={`p-4 rounded-xl ${T.card} mt-4`}>
-            <p className={`text-[10px] font-semibold uppercase ${T.subText} mb-3 tracking-[0.24em]`}>TASKS</p>
-            <div className="space-y-3">
-              {taskGroups.map(group => {
-                const groupTasks = (tasks || []).filter(task => task.status === group.id).slice(0, 2);
-                const groupCount = (tasks || []).filter(task => task.status === group.id).length;
-                return (
-                  <div key={group.id} className={`rounded-xl border p-3 ${group.ring} ${theme === "light" ? "bg-white" : "bg-slate-800/40"}`}>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className={`text-[10px] font-semibold uppercase tracking-[0.22em] ${group.color}`}>{group.label}</p>
-                      <span className={`text-[9px] font-semibold ${T.subText}`}>{groupCount}</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {groupTasks.length > 0 ? (
-                        groupTasks.map((task, idx) => (
-                          <div key={`${group.id}-${idx}`} className={`p-2 rounded-lg ${theme === "light" ? "bg-gray-50" : "bg-gray-700/30"}`}>
-                            <p className={`text-[10px] font-semibold ${T.text} truncate`}>{task.title || "Untitled Task"}</p>
-                            <p className={`text-[8px] ${T.subText}`}>{task.status || "pending"}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className={`text-[9px] ${T.subText} italic`}>No tasks</p>
-                      )}
+            <p className={`text-xs font-semibold uppercase tracking-wider ${T.subText} mb-3`}>TASKS</p>
+            <div className="space-y-2">
+              {tasks && tasks.length > 0 ? (
+                tasks.map((task, idx) => (
+                  <div key={idx} className={`py-3.5 px-4 rounded-xl border ${theme === "light" ? "bg-white border-gray-200" : "bg-slate-800/50 border-slate-700/50"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className={`text-sm font-medium ${T.text} truncate min-w-0 flex-1`}>{task.title || "Untitled Task"}</p>
+                      <span className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full border ${theme === "light" ? "bg-slate-100 border-slate-200 text-slate-500" : "bg-slate-900/60 border-slate-700/60 text-slate-300"}`}>
+                        {(task.status || "pending").replace(/-/g, " ")}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <p className={`text-sm ${T.subText} italic`}>No tasks yet</p>
+              )}
             </div>
           </div>
 
