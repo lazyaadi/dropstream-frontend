@@ -191,7 +191,7 @@ const MobileMenu = ({
                     ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/30"
                     : (rawStatus.includes("progress") || rawStatus.includes("in-progress") || rawStatus.includes("in progress"))
                       ? "text-amber-400 bg-amber-500/10 border border-amber-500/30"
-                      : "text-blue-400 bg-blue-500/10 border border-blue-500/30";
+                      : "text-red-400 bg-red-500/10 border border-red-500/30";
                   const statusLabel = rawStatus.includes("done")
                     ? "DONE"
                     : (rawStatus.includes("progress") || rawStatus.includes("in-progress") || rawStatus.includes("in progress"))

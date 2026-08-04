@@ -9,13 +9,13 @@ export const FREE_TASK_LIMIT = 3;
 export const PRO_TASK_LIMIT = 3000;
 
 export const COLUMNS = [
-  { id: "todo", label: "To Do", color: "#3b82f6", badge: "text-blue-400 bg-blue-500/10 border-blue-500/20", ring: "border-blue-500/40 bg-blue-500/5", dot: "bg-blue-500" },
+  { id: "todo", label: "To Do", color: "#ef4444", badge: "text-red-400 bg-red-500/10 border-red-500/30", ring: "border-red-500/40 bg-red-500/5", dot: "bg-red-500" },
   { id: "in-progress", label: "In Progress", color: "#f59e0b", badge: "text-amber-400 bg-amber-500/10 border-amber-500/20", ring: "border-amber-500/40 bg-amber-500/5", dot: "bg-amber-500" },
   { id: "done", label: "Done", color: "#10b981", badge: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", ring: "border-emerald-500/40 bg-emerald-500/5", dot: "bg-emerald-500" },
 ];
 
 export const COLUMNS_LIGHT = [
-  { id: "todo", label: "To Do", color: "#2563eb", badge: "text-blue-700 bg-blue-100 border-blue-300", ring: "border-blue-300 bg-blue-50", dot: "bg-blue-500" },
+  { id: "todo", label: "To Do", color: "#dc2626", badge: "text-red-700 bg-red-100 border-red-300", ring: "border-red-300 bg-red-50", dot: "bg-red-500" },
   { id: "in-progress", label: "In Progress", color: "#d97706", badge: "text-amber-700 bg-amber-100 border-amber-300", ring: "border-amber-300 bg-amber-50", dot: "bg-amber-500" },
   { id: "done", label: "Done", color: "#059669", badge: "text-emerald-700 bg-emerald-100 border-emerald-300", ring: "border-emerald-300 bg-emerald-50", dot: "bg-emerald-500" },
 ];

@@ -168,7 +168,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
                     </div>
                   </div>
                 </div>
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 ml-auto sm:ml-0 justify-self-end">
                     <span className={`ml-0 sm:ml-12 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
                     ${theme === "light" ? "bg-emerald-100 text-emerald-700" : "bg-emerald-500/20 text-emerald-200"}`}
                   >{isPro ? (completedInitials || "?") : obfuscateText(2, "name").charAt(0)}</span>

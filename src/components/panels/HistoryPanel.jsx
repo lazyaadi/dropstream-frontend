@@ -27,29 +27,40 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
     if (action?.includes("joined"))  return { ic: <ChevronRight size={11}/>,color: "text-purple-500"  };
     return                                  { ic: <Info size={11}/>,        color: T.label            };
   };
+  const statusTone = (status) => {
+    const normalized = String(status || "").toLowerCase();
+    if (normalized.includes("done")) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/30";
+    if (normalized.includes("progress")) return "text-amber-400 bg-amber-500/10 border-amber-500/30";
+    return "text-red-400 bg-red-500/10 border-red-500/30";
+  };
   const renderAction = (action) => {
     if (!action) return null;
     const moveMatch = action.match(/^moved task '(.+?)'(?: to (To Do|In Progress|Done))?$/i);
     if (moveMatch) {
       const [, taskTitle, targetStatus] = moveMatch;
       return (
-        <>
-          <span>{`moved task \"${taskTitle}\"`}</span>
-          {targetStatus && <span className="block mt-1 font-semibold text-blue-400">{`→ ${targetStatus}`}</span>}
-        </>
+        <span className="block">
+          <span className="block">moved task</span>
+          <span className="block mt-0.5 font-semibold text-slate-100">{`"${taskTitle}"`}</span>
+          {targetStatus && (
+            <span className={`inline-flex mt-1 px-2 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-widest ${statusTone(targetStatus)}`}>
+              {`→ ${targetStatus}`}
+            </span>
+          )}
+        </span>
       );
     }
     return action.split(/(To Do|In Progress|Done)/g).map((part, i) => {
-      if (part === "To Do")       return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-blue-100 text-blue-600 border border-blue-200">{part}</span>;
-      if (part === "In Progress") return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-700 border border-amber-200">{part}</span>;
-      if (part === "Done")        return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200">{part}</span>;
+      if (part === "To Do")       return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-red-500/10 text-red-400 border border-red-500/30">{part}</span>;
+      if (part === "In Progress") return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/30">{part}</span>;
+      if (part === "Done")        return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">{part}</span>;
       return <span key={i}>{part}</span>;
     });
   };
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-      className={`fixed right-4 top-20 z-[90] w-64 sm:w-72 ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-3 top-16 sm:right-4 sm:top-20 z-[90] w-[min(18rem,calc(100vw-1.5rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
     >
       <div className="flex justify-between items-center mb-4">
         <div>

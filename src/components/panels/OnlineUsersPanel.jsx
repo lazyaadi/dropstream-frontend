@@ -27,7 +27,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
   const onlineEmails = new Set(displayUsers.map(u => normEmail(u.email)));
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`fixed right-4 top-20 z-[90] w-[calc(100vw-2rem)] sm:w-72 ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-3 top-16 sm:right-4 sm:top-20 z-[90] w-[min(18rem,calc(100vw-1.5rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
     >
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
