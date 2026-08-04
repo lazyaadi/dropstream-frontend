@@ -8,7 +8,7 @@ export default function MembersPanel({ members, onlineUsers, onClose, isPro, onU
   const onlineEmails = onlineUsers.map(u => u.email);
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`fixed right-4 top-20 z-[90] w-64 sm:w-72 ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-4 top-20 z-[90] w-[calc(100vw-2rem)] sm:w-72 ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
     >
       <div className="flex justify-between items-center mb-4">
         <p className={`text-[9px] sm:text-[10px] font-black ${T.label} uppercase tracking-widest`}>Team{isPro ? ` (${members.length})` : ''}</p>

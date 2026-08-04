@@ -279,18 +279,22 @@ function AppInner() {
 
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
+    const previousGutter = document.documentElement.style.scrollbarGutter;
     const previousOverflow = document.body.style.overflow;
     const previousTouchAction = document.body.style.touchAction;
 
     if (overlayIsActive) {
+      document.documentElement.style.scrollbarGutter = "stable";
       document.body.style.overflow = "hidden";
       document.body.style.touchAction = "none";
     } else {
+      document.documentElement.style.scrollbarGutter = previousGutter || "";
       document.body.style.overflow = previousOverflow || "";
       document.body.style.touchAction = previousTouchAction || "";
     }
 
     return () => {
+      document.documentElement.style.scrollbarGutter = previousGutter;
       document.body.style.overflow = previousOverflow;
       document.body.style.touchAction = previousTouchAction;
     };

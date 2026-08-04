@@ -75,7 +75,7 @@ const MobileMenu = ({
         </div>
 
         <div className="overflow-y-auto flex-1">
-          <div className={`p-4 rounded-xl ${T.card} mb-4`}>
+          <div className={`w-full p-4 rounded-xl ${T.card} mb-4`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-base font-black text-white shrink-0">
                 {userName.charAt(0).toUpperCase()}
@@ -124,7 +124,7 @@ const MobileMenu = ({
             )}
           </div>
 
-          <div className={`p-4 rounded-xl ${T.card} mb-4`}>
+          <div className={`w-full p-4 rounded-xl ${T.card} mb-4`}>
             <div className="flex items-center justify-between">
               <span className={`text-sm font-mono ${T.subText}`}>#{workspaceName}</span>
               <span className={`text-sm ${T.subText}`}>{tasks.length} tasks · {progress}% done</span>
@@ -134,7 +134,7 @@ const MobileMenu = ({
             </div>
           </div>
 
-          <div className={`p-4 rounded-xl ${T.card}`}>
+          <div className={`w-full p-4 rounded-xl ${T.card}`}>
             <p className={`text-[10px] font-semibold uppercase ${T.subText} mb-3 tracking-[0.24em]`}>MENU</p>
             <div className="space-y-2">
               <button 
@@ -185,16 +185,29 @@ const MobileMenu = ({
             <p className={`text-xs font-semibold uppercase tracking-wider ${T.subText} mb-3`}>TASKS</p>
             <div className="space-y-2">
               {tasks && tasks.length > 0 ? (
-                tasks.map((task, idx) => (
+                tasks.map((task, idx) => {
+                  const rawStatus = String(task.status || "pending").toLowerCase();
+                  const statusClass = rawStatus.includes("done")
+                    ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/30"
+                    : (rawStatus.includes("progress") || rawStatus.includes("in-progress") || rawStatus.includes("in progress"))
+                      ? "text-amber-400 bg-amber-500/10 border border-amber-500/30"
+                      : "text-blue-400 bg-blue-500/10 border border-blue-500/30";
+                  const statusLabel = rawStatus.includes("done")
+                    ? "DONE"
+                    : (rawStatus.includes("progress") || rawStatus.includes("in-progress") || rawStatus.includes("in progress"))
+                      ? "IN PROGRESS"
+                      : "TODO";
+                  return (
                   <div key={idx} className={`py-3.5 px-4 rounded-xl border ${theme === "light" ? "bg-white border-gray-200" : "bg-slate-800/50 border-slate-700/50"}`}>
                     <div className="flex items-start justify-between gap-3">
                       <p className={`text-sm font-medium ${T.text} truncate min-w-0 flex-1`}>{task.title || "Untitled Task"}</p>
-                      <span className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full border ${theme === "light" ? "bg-slate-100 border-slate-200 text-slate-500" : "bg-slate-900/60 border-slate-700/60 text-slate-300"}`}>
-                        {(task.status || "pending").replace(/-/g, " ")}
+                      <span className={`shrink-0 text-[9px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full ${statusClass}`}>
+                        {statusLabel}
                       </span>
                     </div>
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <p className={`text-sm ${T.subText} italic`}>No tasks yet</p>
               )}
