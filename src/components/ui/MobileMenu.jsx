@@ -12,8 +12,10 @@ const MobileMenu = ({
   workspaceName,
   tasks,
   progress,
+  onlineUsers,
   setShowHistory,
   setShowMembers,
+  setShowOnlineUsers,
   onOpenProModal,
   handleLeave,
   setIsMenuOpen,
@@ -39,6 +41,11 @@ const MobileMenu = ({
     : null;
   const hasExpiry = daysLeft !== null;
   const daysLabel = daysLeft === 1 ? "Day Left" : "Days Left";
+  const taskGroups = [
+    { id: "todo", label: "TO DO", color: "text-blue-500", ring: "border-blue-500/20 bg-blue-500/10" },
+    { id: "in-progress", label: "IN PROGRESS", color: "text-amber-500", ring: "border-amber-500/20 bg-amber-500/10" },
+    { id: "done", label: "DONE", color: "text-emerald-500", ring: "border-emerald-500/20 bg-emerald-500/10" },
+  ];
 
   return (
     <>
@@ -64,8 +71,8 @@ const MobileMenu = ({
               </svg>
             </div>
             <div>
-              <p className="text-[8px] font-black text-blue-500 uppercase tracking-[0.3em]">SyncBoard</p>
-              <p className={`text-sm font-bold ${T.text}`}>CHECK</p>
+                <p className="text-[8px] font-semibold text-blue-500 uppercase tracking-[0.24em]">SyncBoard</p>
+                <p className={`text-sm font-semibold ${T.text}`}>Workspace</p>
             </div>
           </div>
           <button onClick={() => setIsMenuOpen(false)} className={`p-2 rounded-lg ${T.card}`}>
@@ -134,7 +141,7 @@ const MobileMenu = ({
           </div>
 
           <div className={`p-4 rounded-xl ${T.card}`}>
-            <p className={`text-xs font-bold uppercase ${T.subText} mb-3`}>MENU</p>
+            <p className={`text-[10px] font-semibold uppercase ${T.subText} mb-3 tracking-[0.24em]`}>MENU</p>
             <div className="space-y-2">
               <button 
                 onClick={() => {
@@ -145,8 +152,8 @@ const MobileMenu = ({
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><History size={20} /></div>
                 <div className="flex-1 text-left">
-                  <p className={`font-bold ${T.text}`}>History</p>
-                  <p className={`text-xs ${T.subText}`}>Recent activity log</p>
+                  <p className={`text-[13px] font-semibold ${T.text}`}>History</p>
+                  <p className={`text-[10px] ${T.subText}`}>Recent activity log</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
@@ -160,8 +167,25 @@ const MobileMenu = ({
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><Users size={20} /></div>
                 <div className="flex-1 text-left">
-                  <p className={`font-bold ${T.text}`}>Team</p>
-                  <p className={`text-xs ${T.subText}`}>Members & permissions</p>
+                  <p className={`text-[13px] font-semibold ${T.text}`}>Team</p>
+                  <p className={`text-[10px] ${T.subText}`}>Members & permissions</p>
+                </div>
+                <ChevronRight size={18} className={T.subText} />
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowOnlineUsers(v => !v);
+                  setIsMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+              >
+                <div className={`p-2 rounded-lg ${theme === "light" ? "bg-blue-100" : "bg-blue-500/15"}`}>
+                  <Users size={20} className={theme === "light" ? "text-blue-600" : "text-blue-300"} />
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className={`text-[13px] font-semibold ${T.text}`}>Who&apos;s Online</p>
+                  <p className={`text-[10px] ${T.subText}`}>{(onlineUsers || []).length} active teammate{(onlineUsers || []).length === 1 ? "" : "s"}</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
@@ -170,18 +194,32 @@ const MobileMenu = ({
           </div>
 
           <div className={`p-4 rounded-xl ${T.card} mt-4`}>
-            <p className={`text-xs font-bold uppercase ${T.subText} mb-3`}>TASKS</p>
-            <div className="space-y-2">
-              {tasks && tasks.length > 0 ? (
-                tasks.slice(0, 5).map((task, idx) => (
-                  <div key={idx} className={`p-2 rounded-lg ${theme === "light" ? "bg-gray-100" : "bg-gray-700/30"}`}>
-                    <p className={`text-xs font-semibold ${T.text} truncate`}>{task.title || "Untitled Task"}</p>
-                    <p className={`text-[10px] ${T.subText}`}>{task.status || "pending"}</p>
+            <p className={`text-[10px] font-semibold uppercase ${T.subText} mb-3 tracking-[0.24em]`}>TASKS</p>
+            <div className="space-y-3">
+              {taskGroups.map(group => {
+                const groupTasks = (tasks || []).filter(task => task.status === group.id).slice(0, 2);
+                const groupCount = (tasks || []).filter(task => task.status === group.id).length;
+                return (
+                  <div key={group.id} className={`rounded-xl border p-3 ${group.ring} ${theme === "light" ? "bg-white" : "bg-slate-800/40"}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className={`text-[10px] font-semibold uppercase tracking-[0.22em] ${group.color}`}>{group.label}</p>
+                      <span className={`text-[9px] font-semibold ${T.subText}`}>{groupCount}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {groupTasks.length > 0 ? (
+                        groupTasks.map((task, idx) => (
+                          <div key={`${group.id}-${idx}`} className={`p-2 rounded-lg ${theme === "light" ? "bg-gray-50" : "bg-gray-700/30"}`}>
+                            <p className={`text-[10px] font-semibold ${T.text} truncate`}>{task.title || "Untitled Task"}</p>
+                            <p className={`text-[8px] ${T.subText}`}>{task.status || "pending"}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className={`text-[9px] ${T.subText} italic`}>No tasks</p>
+                      )}
+                    </div>
                   </div>
-                ))
-              ) : (
-                <p className={`text-xs ${T.subText} italic`}>No tasks yet</p>
-              )}
+                );
+              })}
             </div>
           </div>
 

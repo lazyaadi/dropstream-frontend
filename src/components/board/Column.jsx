@@ -25,13 +25,13 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
           ) : (
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: thisCol.color }} />
           )}
-          <h3 className={`text-[12px] font-black uppercase tracking-[0.28em] ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>{col.label}</h3>
+          <h3 className={`text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.2em] ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>{col.label}</h3>
         </div>
-        <span className={`text-[11px] font-black px-3 py-1 rounded-full border shadow-sm ${thisCol.badge}`}>{tasks.length}</span>
+        <span className={`text-[10px] font-semibold px-3 py-1 rounded-full border shadow-sm ${thisCol.badge}`}>{tasks.length}</span>
       </div>
 
       <div ref={setNodeRef}
-        className={`rounded-2xl p-3 flex-1 min-h-[380px] sm:min-h-[500px] border-2 transition-all duration-200 backdrop-blur-none md:backdrop-blur-sm ${isOver ? `${thisCol.ring} shadow-lg` : T.colBg}`}
+        className={`rounded-2xl p-3 flex-1 min-h-95 sm:min-h-125 border-2 transition-all duration-200 backdrop-blur-none md:backdrop-blur-sm ${isOver ? `${thisCol.ring} shadow-lg` : T.colBg}`}
       >
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {isLoading ? (

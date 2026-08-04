@@ -274,6 +274,28 @@ function AppInner() {
   const [boardHydrating, setBoardHydrating]   = useState(false);
   const boardHydrateTimerRef = useRef(null);
   const finishBoardHydrationRef = useRef(() => {});
+
+  const overlayIsActive = showAdd || showHistory || showMembers || showProModal || showOnlineUsers || showAbout || showContact || showMobileMenu || deleteConfirmation.show;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    if (overlayIsActive) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    } else {
+      document.body.style.overflow = previousOverflow || "";
+      document.body.style.touchAction = previousTouchAction || "";
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, [overlayIsActive]);
+
   finishBoardHydrationRef.current = () => {
     if (boardHydrateTimerRef.current) clearTimeout(boardHydrateTimerRef.current);
     boardHydrateTimerRef.current = setTimeout(() => {
@@ -791,7 +813,7 @@ function AppInner() {
       : t
     );
     setTasks(updated);
-    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: `moved "${task.title}" → ${colLabel}`, taskTitle: task.title } });
+    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "move_task", taskTitle: task.title, targetStatus: colLabel } });
   };
 
   const addTask = useCallback((taskData) => {
@@ -827,7 +849,7 @@ function AppInner() {
     const updated = [...tasks, newTask];
     setTasks(updated);
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
-    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "added task", taskTitle: title }, newTaskId: taskId });
+    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
     addToast("Task created", "success");
   }, [tasks, isPro, userTaskCount, userName, role, workspaceName, addToast]);
 
@@ -835,7 +857,7 @@ function AppInner() {
     const task = tasks.find(t => t.id === taskId);
     const updated = tasks.filter(t => t.id !== taskId);
     setTasks(updated);
-    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "deleted task", taskTitle: task?.title || "" } });
+    socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "delete_task", taskTitle: task?.title || "" } });
     addToast("Task deleted", "delete");
   }, [tasks, workspaceName, addToast]);
 
@@ -925,7 +947,7 @@ function AppInner() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
                 </svg>
               </div>
-              <h1 className={`text-2xl font-black ${T.text} tracking-tight`}>SyncBoard</h1>
+              <h1 className={`text-2xl font-semibold ${T.text} tracking-tight`}>SyncBoard</h1>
               <p className={`text-[10px] ${T.label} uppercase tracking-[0.45em] mt-1 font-black`}>Team Task Manager</p>
             </div>
 
@@ -1044,20 +1066,20 @@ function AppInner() {
                 {view === "start" ? (
                   <div className="space-y-0">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black text-white shrink-0 ${theme === "light" ? "bg-blue-600" : "bg-blue-500"}`}>3</div>
+                      <div className={`rounded-full px-3 py-1.5 flex items-center justify-center text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] text-white shrink-0 ${theme === "light" ? "bg-blue-600" : "bg-blue-500"}`}>Step 3 · Workspace</div>
                       <div>
-                        <p className={`text-xs font-black uppercase tracking-[0.15em] ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Workspace</p>
+                        <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Workspace</p>
                         <p className={`text-[9px] ${T.label} mt-0.5`}>Create new or join existing.</p>
                       </div>
                     </div>
 
                     <div className="flex gap-3 mt-6">
                       <button onClick={() => setView("create")}
-                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-black text-sm bg-linear-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
+                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm bg-linear-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
                         <Plus size={18}/><span>New Workspace</span>
                       </button>
                       <button onClick={() => setView("join")}
-                        className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-black text-sm transition-all active:scale-95 cursor-pointer backdrop-blur-sm border-2
+                        className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-semibold text-sm transition-all active:scale-95 cursor-pointer backdrop-blur-sm border-2
                           ${theme === "light" ? "bg-white border-blue-600 text-blue-600 hover:bg-blue-50" : "bg-slate-800/50 border-blue-500 text-blue-300 hover:bg-slate-700/60"}`}>
                         <ChevronRight size={18}/><span>Join Workspace</span>
                       </button>
@@ -1080,7 +1102,7 @@ function AppInner() {
                     </div>
 
                     <button onClick={() => setShowProModal(true)}
-                      className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer mt-4
+                      className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl font-semibold text-xs uppercase tracking-[0.18em] transition-all active:scale-95 cursor-pointer mt-4
                         ${isPro
                           ? `${theme === "light" ? "bg-amber-100 border-2 border-amber-400 text-amber-700" : "bg-amber-500/15 border-2 border-amber-500/50 text-amber-400"}`
                           : `bg-linear-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
@@ -1130,11 +1152,11 @@ function AppInner() {
 
             <div className={`mt-8 pt-4 border-t ${T.divider} flex items-center justify-between`}>
               <button onClick={() => setShowAbout(true)}
-                className={`text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition cursor-pointer flex items-center gap-1`}>
+                className={`text-[9px] font-semibold uppercase tracking-widest bg-linear-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent animate-pulse transition cursor-pointer flex items-center gap-1`}>
                 <Info size={11}/>How it works
               </button>
               <button onClick={() => setShowContact(true)}
-                className={`text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition flex items-center gap-1 cursor-pointer`}>
+                className={`text-[9px] font-semibold uppercase tracking-widest ${T.label} hover:text-blue-500 transition flex items-center gap-1 cursor-pointer`}>
                 <Shield size={11}/>Questions?
               </button>
             </div>
@@ -1229,8 +1251,10 @@ function AppInner() {
           workspaceName={workspaceName}
           tasks={tasks || []}
           progress={progress || 0}
+          onlineUsers={onlineUsers || []}
           setShowHistory={setShowHistory}
           setShowMembers={setShowMembers}
+          setShowOnlineUsers={setShowOnlineUsers}
           onOpenProModal={() => setShowProModal(true)}
           handleLeave={handleLeave}
           setIsMenuOpen={setShowMobileMenu}
@@ -1335,16 +1359,16 @@ function AppInner() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
-              <span className={`text-[9px] font-black uppercase tracking-widest ${T.label}`}>SyncBoard · Real-time · Always Synced</span>
+              <span className={`text-[9px] font-semibold uppercase tracking-widest ${T.label}`}>SyncBoard · Real-time · Always Synced</span>
               <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
             </div>
             <button onClick={() => setShowAbout(true)}
-              className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
+              className={`flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
                 ${theme === "light" ? "text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600 bg-white shadow-sm" : "text-slate-600 border-slate-800 hover:border-blue-500/40 hover:text-blue-400"}`}>
               <Info size={11}/>About SyncBoard
             </button>
             <button onClick={() => setShowContact(true)}
-              className={`text-[9px] font-black text-blue-500 hover:text-blue-400 transition underline underline-offset-2 flex items-center gap-1 cursor-pointer`}>
+              className={`text-[9px] font-semibold text-blue-500 hover:text-blue-400 transition underline underline-offset-2 flex items-center gap-1 cursor-pointer`}>
               <Shield size={11}/>Contact
             </button>
           </div>

@@ -39,8 +39,8 @@ const Navbar = ({
               </svg>
             </div>
             <div className="flex flex-col">
-              <p className="text-[8px] font-black text-blue-500 uppercase tracking-[0.3em] leading-none">SyncBoard</p>
-              <h1 className={`text-sm font-bold ${T.text} leading-snug tracking-tight mt-1`}>{projectName}</h1>
+              <p className="text-[8px] font-semibold text-blue-500 uppercase tracking-[0.24em] leading-none">SyncBoard</p>
+              <h1 className={`text-sm font-semibold ${T.text} leading-snug tracking-tight mt-1`}>{projectName}</h1>
             </div>
           </div>
 

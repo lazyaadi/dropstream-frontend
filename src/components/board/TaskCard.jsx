@@ -158,11 +158,11 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
                     ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
                   >{isPro ? (creatorInitials || "?") : obfuscateText(0, "name").charAt(0)}</span>
                   <div className={`flex flex-col gap-1 min-w-0 flex-1 ${!isPro ? lockedMetaCls : ""}`}>
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${T.label}`}>Created</span>
-                    <span className={`text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                    <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] ${T.label}`}>Created</span>
+                    <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       {isPro ? (task.addedBy || "Unknown") : obfuscateText(0, "name")}
                     </span>
-                      <div className={`flex items-center gap-1 text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                      <div className={`flex items-center gap-1 text-[8px] sm:text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       <Clock size={9} className="shrink-0" />
                         <span>{isPro ? (task.createdAt ? fmtCardTime(task.createdAt) : "—") : obfuscateText(1, "number")}</span>
                     </div>
@@ -173,11 +173,11 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
                     ${theme === "light" ? "bg-emerald-100 text-emerald-700" : "bg-emerald-500/20 text-emerald-200"}`}
                   >{isPro ? (completedInitials || "?") : obfuscateText(2, "name").charAt(0)}</span>
                     <div className={`flex flex-col gap-1 min-w-0 flex-1 items-start ${!isPro ? lockedMetaCls : ""}`}>
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${T.label}`}>Completed</span>
-                    <span className={`text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                    <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] ${T.label}`}>Completed</span>
+                    <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       {isPro ? (task.completedBy || "Unknown") : obfuscateText(2, "name")}
                     </span>
-                      <div className={`flex items-center gap-1 text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
+                      <div className={`flex items-center gap-1 text-[8px] sm:text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
                       <Clock size={9} className="shrink-0" />
                         <span>{isPro ? (task.completedAt ? fmtCardTime(task.completedAt) : "—") : obfuscateText(3, "number")}</span>
                     </div>
@@ -251,7 +251,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
           />
           <button
             onClick={() => setShowImage(false)}
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-11 h-11 rounded-full flex items-center justify-center shadow-xl cursor-pointer bg-black/70 text-white border border-white/20 backdrop-blur-md"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 z-50 w-11 h-11 rounded-full flex items-center justify-center shadow-xl cursor-pointer bg-black/70 text-white border border-white/20 backdrop-blur-md p-0.5"
             aria-label="Close image preview"
           >
             <X size={18} />

@@ -107,13 +107,13 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
   if (isPro) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 flex items-center justify-center z-[100] p-3"
+        className="fixed inset-0 flex items-center justify-center z-100 p-3"
         style={{ background: isDark ? "rgba(2,6,23,0.86)" : "rgba(15,23,42,0.35)", backdropFilter: "blur(14px)" }}
         onClick={onClose}
       >
         <motion.div initial={{ scale: 0.95, opacity: 0, y: 8 }} animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 8 }} transition={{ type: "spring", stiffness: 340, damping: 28 }}
-          className="relative w-full max-w-[420px] rounded-2xl overflow-hidden pro-activated-card"
+          className="relative w-full max-w-105 rounded-2xl overflow-hidden pro-activated-card"
           style={{
             background: isDark ? "linear-gradient(160deg, #0b1020 0%, #0f172a 55%, #0a0f1e 100%)" : "linear-gradient(180deg, #fff7dd 0%, #fff8e7 35%, #fff 100%)",
             border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(245,200,120,0.55)",
@@ -133,11 +133,10 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
               boxShadow: isDark ? "0 24px 60px rgba(0,0,0,0.65)" : "0 20px 50px rgba(140,95,20,0.15)",
               position: "relative",
               overflow: "hidden",
-              fontFamily: "\"Plus Jakarta Sans\", \"Segoe UI\", sans-serif",
+              fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
             }}
           >
             <style>{`
-              @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
               @keyframes sbFloat { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
               @keyframes sbGlow { 0%,100%{ opacity: .35;} 50%{ opacity: .7;} }
               @media (max-width: 520px) {
@@ -175,7 +174,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <div>
                 <p className="pro-activated-title" style={{
-                  fontSize: 22, fontWeight: 800, marginBottom: 2,
+                  fontSize: 22, fontWeight: 700, marginBottom: 2, letterSpacing: "-0.02em",
                   color: isDark ? "#f8fafc" : "#1f2937",
                 }}>You're a Pro now.</p>
                 <p className="pro-activated-sub" style={{ fontSize: 12, color: isDark ? "#cbd5f5" : "#6b7280", fontWeight: 600 }}>
@@ -266,7 +265,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
     <AnimatePresence>
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center z-[110] p-4"
+          className="fixed inset-0 flex items-center justify-center z-110 p-4"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}
           onClick={onClose}
         >
@@ -338,7 +337,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
         }
       `}</style>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 flex items-center justify-center z-[100] p-2 sm:p-4"
+        className="fixed inset-0 flex items-center justify-center z-100 p-2 sm:p-4"
         style={{ background: isDark ? "rgba(2,6,23,0.88)" : "rgba(15,23,42,0.6)", backdropFilter: "blur(14px)", overflow: "auto" }}
         onClick={onClose}
       >
