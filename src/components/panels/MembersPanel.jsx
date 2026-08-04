@@ -44,7 +44,7 @@ export default function MembersPanel({ members, onlineUsers, onClose, isPro, onU
                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${online ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-[9px] sm:text-xs font-black truncate ${T.text}`}>{m.name}</p>
-                  <p className={`text-[8px] sm:text-[9px] truncate ${T.label}`}>{m.email}</p>
+                  <p className={`text-[8px] sm:text-[9px] truncate ${theme === "light" ? "text-slate-500" : "text-slate-300"}`}>{m.email}</p>
                 </div>
                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${m.role === "admin" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>{m.role}</span>
               </div>

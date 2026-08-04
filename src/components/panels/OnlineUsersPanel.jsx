@@ -47,7 +47,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
                 >{(safeCurrent.name || "?").charAt(0).toUpperCase()}</div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-xs font-black truncate ${T.text}`}>{safeCurrent.name || "You"}</p>
-                  {safeCurrent.email && <p className={`text-[9px] truncate ${T.label}`}>{safeCurrent.email}</p>}
+                  {safeCurrent.email && <p className={`text-[9px] truncate ${theme === "light" ? "text-slate-500" : "text-slate-300"}`}>{safeCurrent.email}</p>}
                 </div>
               </div>
             )}
@@ -59,7 +59,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
                 >?</div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-xs font-black truncate ${T.text} blur-[5px] opacity-40`}>XXXXX XXXXX</p>
-                  <p className={`text-[9px] truncate ${T.label} blur-[5px] opacity-40`}>xxx@xxx.com</p>
+                  <p className={`text-[9px] truncate ${theme === "light" ? "text-slate-500" : "text-slate-300"} blur-[5px] opacity-40`}>xxx@xxx.com</p>
                 </div>
               </div>
             ))}
@@ -87,7 +87,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
                     <p className={`text-xs font-black truncate ${T.text}`}>{nameText}</p>
                   </div>
                   {displayEmail && (
-                    <p className={`text-[9px] truncate ${T.label}`}>{displayEmail}</p>
+                    <p className={`text-[9px] truncate ${theme === "light" ? "text-slate-500" : "text-slate-300"}`}>{displayEmail}</p>
                   )}
                 </div>
               </div>

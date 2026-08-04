@@ -55,7 +55,7 @@ const MobileMenu = ({
         animate={{ x: 0 }}
         exit={{ x: "-100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-60 ${T.bg} p-4 flex flex-col font-sans`}
+        className={`fixed top-0 left-0 bottom-0 w-4/5 max-w-sm z-60 ${T.bg} p-4 flex flex-col font-sans box-border`}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -77,14 +77,14 @@ const MobileMenu = ({
         <div className="overflow-y-auto flex-1">
           <div className={`p-4 rounded-xl ${T.card} mb-4`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg font-black text-white shrink-0">
+              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-base font-black text-white shrink-0">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className={`font-bold ${T.text}`}>{userName}</p>
+                <p className={`font-medium ${T.text}`}>{userName}</p>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold uppercase ${role === "admin" ? "text-purple-500" : "text-blue-500"}`}>{role}</span>
-                  <span className="flex items-center gap-1 text-xs text-emerald-500">
+                  <span className={`text-[11px] font-normal uppercase ${role === "admin" ? "text-purple-400" : "text-blue-400"}`}>{role}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-emerald-400">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     Online
                   </span>
@@ -98,12 +98,12 @@ const MobileMenu = ({
               <div className={`mt-4 rounded-xl border px-3 py-3 ${theme === "light" ? "bg-amber-50 border-amber-200" : "bg-amber-500/10 border-amber-500/20"}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${theme === "light" ? "text-amber-700" : "text-amber-400"}`}>Pro Active</p>
-                    <p className={`text-[11px] font-semibold mt-1 ${T.text}`}>You have {daysLeft === null ? "full Pro access" : `${daysLeft} ${daysLabel.toLowerCase()}`}</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest ${theme === "light" ? "text-amber-700" : "text-amber-400"}`}>Pro Active</p>
+                    <p className={`text-[10px] font-semibold mt-1 ${T.text}`}>You have {daysLeft === null ? "full Pro access" : `${daysLeft} ${daysLabel.toLowerCase()}`}</p>
                   </div>
                   <div className="text-right">
-                    <p className={`text-[18px] font-black leading-none ${theme === "light" ? "text-amber-600" : "text-amber-400"}`}>{daysLeft === null ? "--" : daysLeft}</p>
-                    <p className={`text-[9px] font-black uppercase tracking-widest ${T.subText}`}>{daysLabel}</p>
+                    <p className={`text-base font-black leading-none ${theme === "light" ? "text-amber-600" : "text-amber-400"}`}>{daysLeft === null ? "--" : daysLeft}</p>
+                    <p className={`text-[8px] font-black uppercase tracking-widest ${T.subText}`}>{daysLabel}</p>
                   </div>
                 </div>
                 {hasExpiry && daysLeft > 0 && (
@@ -140,9 +140,8 @@ const MobileMenu = ({
               <button 
                 onClick={() => {
                   setShowHistory(v => !v);
-                  setIsMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition box-border ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><History size={20} /></div>
                 <div className="flex-1 text-left">
@@ -154,9 +153,8 @@ const MobileMenu = ({
               <button 
                 onClick={() => {
                   setShowMembers(v => !v);
-                  setIsMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition box-border ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
               >
                 <div className={`p-2 rounded-lg ${T.iconBg}`}><Users size={20} /></div>
                 <div className="flex-1 text-left">
@@ -168,9 +166,8 @@ const MobileMenu = ({
               <button
                 onClick={() => {
                   setShowOnlineUsers(v => !v);
-                  setIsMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition box-border ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
               >
                 <div className={`p-2 rounded-lg ${theme === "light" ? "bg-blue-100" : "bg-blue-500/15"}`}>
                   <Users size={20} className={theme === "light" ? "text-blue-600" : "text-blue-300"} />

@@ -27,8 +27,18 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
     if (action?.includes("joined"))  return { ic: <ChevronRight size={11}/>,color: "text-purple-500"  };
     return                                  { ic: <Info size={11}/>,        color: T.label            };
   };
-  const highlight = (action) => {
+  const renderAction = (action) => {
     if (!action) return null;
+    const moveMatch = action.match(/^moved task '(.+?)'(?: to (To Do|In Progress|Done))?$/i);
+    if (moveMatch) {
+      const [, taskTitle, targetStatus] = moveMatch;
+      return (
+        <>
+          <span>{`moved task \"${taskTitle}\"`}</span>
+          {targetStatus && <span className="block mt-1 font-semibold text-blue-400">{`→ ${targetStatus}`}</span>}
+        </>
+      );
+    }
     return action.split(/(To Do|In Progress|Done)/g).map((part, i) => {
       if (part === "To Do")       return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-blue-100 text-blue-600 border border-blue-200">{part}</span>;
       if (part === "In Progress") return <span key={i} className="px-1 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-700 border border-amber-200">{part}</span>;
@@ -93,7 +103,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
                 <div className="flex-1 min-w-0">
                   <p className={`text-[9px] sm:text-[10px] font-bold ${T.text} break-words leading-relaxed`}>
                     <span className={h.userRole === "admin" ? "text-purple-500 font-black" : "text-blue-500 font-black"}>{h.userName}</span>{" "}
-                    {highlight(h.action)}
+                    {renderAction(h.action)}
                   </p>
                   <p className={`text-[8px] sm:text-[9px] ${T.label} mt-0.5`}>{fmtTime(h.timestamp)}</p>
                 </div>

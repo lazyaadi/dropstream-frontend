@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@layer base {
+  html {
+    box-sizing: border-box;
+    overflow-y: scroll;
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
+
+  body {
+    overflow-y: scroll;
+  }
+}
+
 @theme {
   /* This ensures Tailwind 4 knows how to handle your custom colors if needed */
 }

@@ -55,7 +55,7 @@ const TD = {
   historyBg: "bg-slate-800/50 border-slate-700/40",
   panelBg: "bg-slate-900/95 border-slate-700/60",
   text: "text-slate-200", loginCard: "bg-slate-900/90 border-slate-800",
-  label: "text-slate-500", divider: "border-slate-800",
+  label: "text-slate-500", divider: "border-slate-700/80",
 };
 
 const TL = {
@@ -955,7 +955,7 @@ function AppInner() {
               <div className="flex flex-col gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Pro Active</p>
+                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pro Active</p>
                   <button onClick={() => {
                     localStorage.removeItem(PRO_PIN_KEY);
                     localStorage.removeItem("sb_pro_active");
@@ -963,7 +963,7 @@ function AppInner() {
                     setProExpiresAt(null);
                     socket.emit("deactivate_pro", { email: userEmail });
                   }}
-                    className={`ml-auto text-[9px] ${T.label} hover:text-red-500 transition font-black cursor-pointer`}>Deactivate</button>
+                    className={`ml-auto text-[9px] font-normal ${theme === "light" ? "text-slate-500" : "text-slate-400"} hover:text-red-500 transition cursor-pointer`}>Deactivate</button>
                 </div>
                 {proExpiryLabel && (
                   <div className="flex items-center gap-2 text-[9px] font-black text-amber-500">
@@ -1065,9 +1065,12 @@ function AppInner() {
               <div className="space-y-3">
                 {view === "start" ? (
                   <div className="space-y-0">
-                    <div className="mb-6 text-left">
-                      <p className={`text-xs font-semibold uppercase tracking-wider ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Workspace</p>
-                      <p className={`text-[10px] ${T.label} mt-0.5`}>Create new or join existing.</p>
+                    <div className="flex items-start gap-3 mb-6 text-left">
+                      <div className={`w-8 h-8 rounded-full ${theme === "light" ? "bg-blue-600" : "bg-blue-500"} text-white flex items-center justify-center font-semibold text-sm shrink-0`}>3</div>
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-wider ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>WORKSPACE</p>
+                        <p className={`text-[10px] ${T.label} mt-0.5`}>Create new or join existing.</p>
+                      </div>
                     </div>
 
                     <div className="flex gap-3 mt-6">
@@ -1091,11 +1094,11 @@ function AppInner() {
                     <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 ${theme === "light" ? "bg-emerald-50/50 border-emerald-300" : "bg-emerald-500/10 border-emerald-500/30"}`}>
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[11px] font-black uppercase tracking-wider ${theme === "light" ? "text-emerald-700" : "text-emerald-400"}`}>{userName}</p>
-                        <p className={`text-[9px] ${theme === "light" ? "text-emerald-600" : "text-emerald-500/70"}`}>Logged in</p>
+                        <p className={`text-sm font-medium truncate ${theme === "light" ? "text-slate-700" : "text-slate-200"}`}>{userName}</p>
+                        <p className={`text-xs font-normal ${theme === "light" ? "text-slate-500" : "text-slate-400"}`}>Logged in</p>
                       </div>
                       <button onClick={() => { setAuthReady(false); setAuthError(""); setAuthStep("name"); }}
-                        className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition cursor-pointer shrink-0 ${theme === "light" ? "bg-emerald-200/50 text-emerald-700 hover:bg-emerald-300" : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40"}`}>Switch User</button>
+                        className={`text-xs font-normal px-3 py-1.5 rounded-lg transition cursor-pointer shrink-0 ${theme === "light" ? "bg-emerald-200/40 text-slate-500 hover:bg-emerald-200/70" : "bg-emerald-500/15 text-slate-400 hover:bg-emerald-500/25"}`}>Switch User</button>
                     </div>
 
                     <button onClick={() => setShowProModal(true)}
@@ -1149,7 +1152,7 @@ function AppInner() {
 
             <div className={`mt-8 pt-4 border-t ${T.divider} flex items-center justify-between`}>
               <button onClick={() => setShowAbout(true)}
-                className={`text-[9px] font-semibold uppercase tracking-widest bg-linear-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent animate-pulse transition cursor-pointer flex items-center gap-1`}>
+                className={`text-[9px] font-semibold uppercase tracking-widest bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent animate-pulse hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1`}>
                 <Info size={11}/>How it works
               </button>
               <button onClick={() => setShowContact(true)}
@@ -1361,7 +1364,7 @@ function AppInner() {
             </div>
             <button onClick={() => setShowAbout(true)}
               className={`flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
-                ${theme === "light" ? "text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600 bg-white shadow-sm" : "text-slate-600 border-slate-800 hover:border-blue-500/40 hover:text-blue-400"}`}>
+                ${theme === "light" ? "text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600 bg-white shadow-sm" : "text-slate-600 border-slate-700/80 hover:border-blue-500/40 hover:text-blue-400"}`}>
               <Info size={11}/>About SyncBoard
             </button>
             <button onClick={() => setShowContact(true)}

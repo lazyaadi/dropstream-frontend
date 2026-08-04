@@ -1,17 +1,16 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Info } from "lucide-react";
+import { motion } from "framer-motion";
+import { X } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
 
 export default function AboutModal({ onClose, theme }) {
   const T = theme === "light" ? TL : TD;
   const steps = [
-    { title: "Overview", body: "SyncBoard is a real-time team task board that keeps everyone synced across devices without page refreshes." },
-    { title: "Step 1 - Workspaces", body: "Workspaces are private team project hubs. Each workspace has a unique Handle for URL access and a 6-digit PIN to prevent unauthorized access." },
-    { title: "Step 2 - Task Columns", body: "Organize work in To Do, In Progress, and Done. Drag and drop tasks between columns to update everyone instantly." },
-    { title: "Step 3 - Real-Time Collaboration", body: "When team members add, edit, move, or delete tasks, changes reflect live on all connected devices." },
-    { title: "Step 4 - Member Presence & Activity History", body: "See online status indicators for active team members and review the complete audit log of task actions with exact timestamps." },
-    { title: "Step 5 - Account & Plan Limits", body: "Free accounts include standard task management, while Pro upgrades unlock expanded task capacity, smart search, full history logs, and image file attachments." },
+    { icon: "🚀", title: "Overview", body: "SyncBoard is a real-time team task board that keeps everyone synced across devices without page refreshes." },
+    { icon: "🔑", title: "Workspaces & PIN", body: "Workspaces are private team project hubs. Each workspace has a unique Handle for URL access and a 6-digit PIN to prevent unauthorized access." },
+    { icon: "⚡", title: "Task Columns & Live Drag", body: "Organize work in To Do, In Progress, and Done. Drag and drop tasks between columns to update everyone instantly." },
+    { icon: "👤", title: "Real-Time Presence & Activity", body: "See online status indicators for active team members and review the complete audit log of task actions with exact timestamps." },
+    { icon: "💎", title: "Pro Features & Security", body: "Free accounts include standard task management, while Pro upgrades unlock expanded task capacity, smart search, full history logs, and image file attachments." },
   ];
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -31,9 +30,9 @@ export default function AboutModal({ onClose, theme }) {
         </div>
         <div className="space-y-3">
           {steps.map((step, index) => (
-            <div key={step.title} className={`flex gap-3 p-4 rounded-xl border ${theme === "light" ? "bg-gray-50 border-gray-200" : "bg-slate-800/40 border-slate-700/40"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/15 text-blue-300"}`}>
-                {index + 1}
+            <div key={step.title} className={`flex gap-3 p-4 rounded-xl border ${theme === "light" ? "bg-gray-50 border-gray-200" : "bg-slate-800/40 border-slate-700/80"}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[14px] shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/15 text-blue-300"}`}>
+                <span aria-hidden="true">{step.icon}</span>
               </div>
               <div className="min-w-0">
                 <p className={`text-sm font-semibold tracking-tight ${T.text} mb-1`}>{step.title}</p>
