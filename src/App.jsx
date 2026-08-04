@@ -659,11 +659,10 @@ function AppInner() {
         if (googleButtonRef.current) {
           googleButtonRef.current.innerHTML = "";
           window.google.accounts.id.renderButton(googleButtonRef.current, {
-            theme: theme === "light" ? "outline" : "outline",
+            theme: "filled_blue",
             size: "large",
-            text: "continue_with",
             shape: "rectangular",
-            width: googleButtonRef.current.clientWidth || 320,
+            width: "100%",
             locale: "en",
           });
         }
@@ -1031,7 +1030,7 @@ function AppInner() {
                 </div>
                 <div
                   ref={googleButtonRef}
-                  className={`w-full flex items-center justify-center rounded-xl border-2 p-2.5 overflow-hidden ${theme === "light" ? "bg-white border-gray-300" : "bg-slate-800/70 border-slate-700"}`}
+                  className="w-full overflow-hidden"
                 />
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
                   className={`w-full text-[9px] font-black uppercase tracking-widest p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}>
