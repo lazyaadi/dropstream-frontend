@@ -27,7 +27,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
   const onlineEmails = new Set(displayUsers.map(u => normEmail(u.email)));
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`fixed right-2 top-14 sm:right-4 sm:top-16 z-[90] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
     >
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
       </div>
       {!isPro ? (
         <>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
             {safeCurrent && (
               <div className={`p-2 rounded-xl border flex items-center gap-2 ${T.historyBg}`}>
                 <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-400 animate-pulse" />
@@ -71,7 +71,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
       ) : (
         <>
           {displayUsers.length === 0 && <p className={`text-xs ${T.label} text-center py-4`}>No one online</p>}
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
             {displayUsers.map((u, i) => {
               const isSelf = safeCurrent && isSameOnlineUser(u, safeCurrent);
               const nameText = u.name || "Unknown";

@@ -48,7 +48,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
       return (
         <span className="block">
           <span className="block">{`${verbLabel} :`}</span>
-          <span className="block mt-0.5 font-semibold text-slate-100">{`"${taskTitle}"`}</span>
+          <span className={`block mt-0.5 font-semibold ${theme === "light" ? "text-slate-900" : "text-slate-100"}`}>{`"${taskTitle}"`}</span>
           {targetStatus && (
             <span className={`block w-fit mt-1 px-2 py-0.5 rounded-md border text-[8px] font-medium uppercase tracking-widest ${statusTone(targetStatus)}`}>
               {`→ ${targetStatus}`}
@@ -67,7 +67,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-      className={`fixed right-2 top-14 sm:right-4 sm:top-16 z-[90] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
     >
       <div className="flex justify-between items-center mb-4">
         <div>
@@ -82,7 +82,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
         </div>
       </div>
       {!isPro ? (
-        <div className="relative">
+        <div className="relative max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           <div className="space-y-1.5 blur-[5px] opacity-40 select-none pointer-events-none">
             {[1,2,3,4,5].map((_, i) => (
               <div key={i} className={`flex gap-2 p-2 rounded-xl ${T.historyBg} border`}>
@@ -106,7 +106,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
           </div>
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           {(!history || history.length === 0) && <p className={`text-[10px] ${T.label} text-center py-4`}>No actions yet</p>}
           {(history || []).map((h, i) => {
             const { ic, color } = icon(h.action);

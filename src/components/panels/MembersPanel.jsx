@@ -8,14 +8,14 @@ export default function MembersPanel({ members, onlineUsers, onClose, isPro, onU
   const onlineEmails = onlineUsers.map(u => u.email);
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`fixed right-2 top-14 sm:right-4 sm:top-16 z-[90] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto`}
+      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
     >
       <div className="flex justify-between items-center mb-4">
         <p className={`text-[9px] sm:text-[10px] font-medium ${T.label} uppercase tracking-widest`}>Team{isPro ? ` (${members.length})` : ''}</p>
         <button onClick={onClose} className={`${T.label} hover:text-blue-500 transition cursor-pointer`}><X size={14}/></button>
       </div>
       {!isPro ? (
-        <div className="relative">
+        <div className="relative max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           <div className="space-y-2 blur-[5px] opacity-40 select-none pointer-events-none">
             {[1,2,3].map((_, i) => (
               <div key={i} className={`p-2 rounded-xl border flex items-center gap-2 ${T.historyBg}`}>
@@ -35,7 +35,7 @@ export default function MembersPanel({ members, onlineUsers, onClose, isPro, onU
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           {members.length === 0 && <p className={`text-xs ${T.label} text-center py-4`}>No members yet</p>}
           {members.map((m, i) => {
             const online = onlineEmails.includes(m.email);
