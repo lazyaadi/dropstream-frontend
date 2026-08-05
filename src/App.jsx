@@ -279,28 +279,48 @@ function AppInner() {
 
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousHtmlOverflowY = document.documentElement.style.overflowY;
+    const previousHtmlTouchAction = document.documentElement.style.touchAction;
+    const previousHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
     const previousGutter = document.documentElement.style.scrollbarGutter;
     const previousOverflow = document.body.style.overflow;
     const previousOverflowY = document.body.style.overflowY;
     const previousTouchAction = document.body.style.touchAction;
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior;
 
     if (overlayIsActive) {
       document.documentElement.style.scrollbarGutter = "stable";
-      document.body.style.overflow = "";
-      document.body.style.overflowY = "scroll";
+      document.documentElement.style.overflow = "hidden";
+      document.documentElement.style.overflowY = "hidden";
+      document.documentElement.style.touchAction = "none";
+      document.documentElement.style.overscrollBehavior = "none";
+      document.body.style.overflow = "hidden";
+      document.body.style.overflowY = "hidden";
       document.body.style.touchAction = "none";
+      document.body.style.overscrollBehavior = "none";
     } else {
+      document.documentElement.style.overflow = previousHtmlOverflow || "";
+      document.documentElement.style.overflowY = previousHtmlOverflowY || "";
+      document.documentElement.style.touchAction = previousHtmlTouchAction || "";
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior || "";
       document.documentElement.style.scrollbarGutter = previousGutter || "";
       document.body.style.overflow = previousOverflow || "";
       document.body.style.overflowY = previousOverflowY || "";
       document.body.style.touchAction = previousTouchAction || "";
+      document.body.style.overscrollBehavior = previousOverscrollBehavior || "";
     }
 
     return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.documentElement.style.overflowY = previousHtmlOverflowY;
+      document.documentElement.style.touchAction = previousHtmlTouchAction;
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior;
       document.documentElement.style.scrollbarGutter = previousGutter;
       document.body.style.overflow = previousOverflow;
       document.body.style.overflowY = previousOverflowY;
       document.body.style.touchAction = previousTouchAction;
+      document.body.style.overscrollBehavior = previousOverscrollBehavior;
     };
   }, [overlayIsActive]);
 
