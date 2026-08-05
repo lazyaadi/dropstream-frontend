@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, TrendingUp, X, Info, ChevronRight, Trash2, Lock } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
@@ -6,19 +6,6 @@ import { fmtTime } from "../../lib/utils";
 
 export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onClearHistory, theme }) {
   const T = theme === "light" ? TL : TD;
-  const [flashKey, setFlashKey] = useState(null);
-
-  useEffect(() => {
-    const latest = history && history[0];
-    if (!latest) {
-      return;
-    }
-
-    const key = `${latest.timestamp || ""}-${latest.userName || ""}-${latest.action || ""}`;
-    setFlashKey(key);
-    const timer = setTimeout(() => setFlashKey(null), 4000);
-    return () => clearTimeout(timer);
-  }, [history]);
 
   const icon = (action) => {
     if (action?.includes("added"))   return { ic: <CheckCircle size={11}/>, color: "text-emerald-500" };
@@ -110,12 +97,10 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
           {(!history || history.length === 0) && <p className={`text-[10px] ${T.label} text-center py-4`}>No actions yet</p>}
           {(history || []).map((h, i) => {
             const { ic, color } = icon(h.action);
-            const entryKey = `${h.timestamp || ""}-${h.userName || ""}-${h.action || ""}`;
-            const isFlashing = flashKey === entryKey;
             return (
               <div
                 key={i}
-                className={`flex gap-2 p-2 rounded-xl ${T.historyBg} border transition-all duration-300 ${isFlashing ? "ring-2 ring-emerald-400/70 shadow-lg shadow-emerald-500/20 scale-[1.01]" : ""}`}
+                className={`flex gap-2 p-2 rounded-xl ${T.historyBg} border`}
               >
                 <span className={`${color} shrink-0 mt-0.5`}>{ic}</span>
                 <div className="flex-1 min-w-0">

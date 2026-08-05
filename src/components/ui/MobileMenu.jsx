@@ -13,6 +13,7 @@ const MobileMenu = ({
   tasks,
   progress,
   onlineUsers,
+  isPanelOpen,
   setShowHistory,
   setShowMembers,
   setShowOnlineUsers,
@@ -74,7 +75,7 @@ const MobileMenu = ({
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1">
+        <div className={`flex-1 ${isPanelOpen ? "overflow-hidden" : "overflow-y-auto"}`}>
           <div className={`w-full p-4 rounded-xl ${T.card} mb-4`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-base font-black text-white shrink-0">

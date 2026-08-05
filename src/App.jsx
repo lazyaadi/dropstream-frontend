@@ -283,7 +283,6 @@ function AppInner() {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
     const previousHtmlTouchAction = document.documentElement.style.touchAction;
     const previousHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
-    const previousGutter = document.documentElement.style.scrollbarGutter;
     const previousOverflow = document.body.style.overflow;
     const previousOverflowY = document.body.style.overflowY;
     const previousTouchAction = document.body.style.touchAction;
@@ -304,7 +303,6 @@ function AppInner() {
       document.documentElement.style.overflowY = previousHtmlOverflowY || "";
       document.documentElement.style.touchAction = previousHtmlTouchAction || "";
       document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior || "";
-      document.documentElement.style.scrollbarGutter = previousGutter || "";
       document.body.style.overflow = previousOverflow || "";
       document.body.style.overflowY = previousOverflowY || "";
       document.body.style.touchAction = previousTouchAction || "";
@@ -316,7 +314,6 @@ function AppInner() {
       document.documentElement.style.overflowY = previousHtmlOverflowY;
       document.documentElement.style.touchAction = previousHtmlTouchAction;
       document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior;
-      document.documentElement.style.scrollbarGutter = previousGutter;
       document.body.style.overflow = previousOverflow;
       document.body.style.overflowY = previousOverflowY;
       document.body.style.touchAction = previousTouchAction;
@@ -1280,6 +1277,7 @@ function AppInner() {
           tasks={tasks || []}
           progress={progress || 0}
           onlineUsers={onlineUsers || []}
+          isPanelOpen={showHistory || showMembers || showOnlineUsers}
           setShowHistory={setShowHistory}
           setShowMembers={setShowMembers}
           setShowOnlineUsers={setShowOnlineUsers}
