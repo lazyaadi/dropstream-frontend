@@ -74,7 +74,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
           <div className="space-y-2 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
             {displayUsers.map((u, i) => {
               const isSelf = safeCurrent && isSameOnlineUser(u, safeCurrent);
-              const nameText = u.name || "Unknown";
+              const nameText = (u?.name || u?.displayName || "").trim() || (u?.email && u.email.includes("@") ? u.email.split("@")[0] : "Unknown");
               const displayEmail = u.email || (isSelf ? (safeCurrent?.email || null) : null);
               return (
               <div key={normEmail(u.email) || normName(u.name) || i} className={`p-2 rounded-xl border flex items-center gap-2 ${T.historyBg} transition-all hover:${theme === "light" ? "bg-gray-100" : "bg-slate-700/50"}`}>

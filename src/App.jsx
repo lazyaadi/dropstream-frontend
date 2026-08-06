@@ -304,6 +304,27 @@ function AppInner() {
   useEffect(() => {
     console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
   }, [isPro]);
+
+  const validMembers = useMemo(() => {
+    return (Array.isArray(members) ? members : []).filter((member) => {
+      const email = typeof member === "string" ? member : member?.email;
+      return email && typeof email === "string" && email.includes("@") && !email.startsWith("AAAAA");
+    });
+  }, [members]);
+
+  const displayMembers = useMemo(() => {
+    return validMembers.map((member) => {
+      const email = typeof member === "string" ? member : member?.email;
+      const explicitName = typeof member === "string" ? "" : String(member?.name || member?.displayName || "").trim();
+      const fallbackName = typeof email === "string" && email.includes("@") ? email.split("@")[0] : "";
+      return {
+        ...(typeof member === "object" && member !== null ? member : {}),
+        email: typeof email === "string" ? email : "",
+        name: explicitName || fallbackName,
+        displayName: explicitName || fallbackName,
+      };
+    });
+  }, [validMembers]);
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, input: "" });
   const [searchQ, setSearchQ]               = useState("");
   const [typers, setTypers]                 = useState([]);
@@ -873,11 +894,13 @@ function AppInner() {
     if (pinErr) return setError(pinErr);
     const isCreating = view === "create";
     if (isCreating && !projectName.trim()) return setError("Project title is required.");
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userName, userEmail, workspaceName, projectName }));
+    const customName = userName.trim();
+    localStorage.setItem("sb_user_name", customName);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userName: customName, userEmail, workspaceName, projectName }));
     setBoardHydrating(true);
     socket.emit("join_workspace", {
       workspaceName: workspaceName.toLowerCase(),
-      password: wsPin, projectName, userName,
+      password: wsPin, projectName, userName: customName, name: customName,
       email: userEmail, isCreating,
     });
   }, [authReady, workspaceName, wsPin, view, projectName, userName, userEmail]);
@@ -1363,11 +1386,11 @@ function AppInner() {
         {showProModal && <ProModal key="pro-modal" isPro={isPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
         {showHistory && <HistoryPanel key="history-panel" history={history} isPro={isPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
-        {showMembers && <MembersPanel key="members-panel" members={members} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={isPro} onUpgrade={openUpgradeProModal} theme={theme} />}
+        {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={isPro} onUpgrade={openUpgradeProModal} theme={theme} />}
         {showOnlineUsers && (
           <OnlineUsersPanel key="online-users-panel"
             users={onlineUsers}
-            members={members}
+            members={displayMembers}
             isPro={isPro}
             onClose={() => setShowOnlineUsers(false)}
             onUpgrade={openUpgradeProModal}
