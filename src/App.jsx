@@ -190,7 +190,6 @@ import Navbar from "./components/ui/Navbar.jsx";
 import MobileMenu from "./components/ui/MobileMenu.jsx";
 import TypingIndicator from "./components/ui/TypingIndicator.jsx";
 
-
 const ErrorBoundary = ({ children }) => {
   return <ErrorModal>{children}</ErrorModal>;
 };
@@ -277,8 +276,13 @@ function AppInner() {
 
   const overlayIsActive = showAdd || showHistory || showMembers || showProModal || showOnlineUsers || showAbout || showContact || showMobileMenu || deleteConfirmation.show;
 
+  // Mobile-only scroll locking: prevents desktop layout shifting when popups open
   useEffect(() => {
-    if (typeof document === "undefined") return undefined;
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return undefined;
+
     const previousHtmlOverflow = document.documentElement.style.overflow;
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
     const previousHtmlTouchAction = document.documentElement.style.touchAction;
@@ -289,7 +293,6 @@ function AppInner() {
     const previousOverscrollBehavior = document.body.style.overscrollBehavior;
 
     if (overlayIsActive) {
-      document.documentElement.style.scrollbarGutter = "stable";
       document.documentElement.style.overflow = "hidden";
       document.documentElement.style.overflowY = "hidden";
       document.documentElement.style.touchAction = "none";
@@ -405,7 +408,6 @@ function AppInner() {
 
           setAuthReady(true);
         } else {
-          // If session data is incomplete, clear it
           localStorage.removeItem(WORKSPACE_SESSION_KEY);
         }
       } catch (err) {
