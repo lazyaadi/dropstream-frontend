@@ -75,17 +75,17 @@ const MobileMenu = ({
           </button>
         </div>
 
-        <div className={`flex-1 ${isPanelOpen ? "overflow-hidden" : "overflow-y-auto"}`}>
+        <div className={`flex-1 ${isPanelOpen ? "overflow-hidden" : "overflow-y-auto mobile-scrollbar-hide"}`}>
           <div className={`w-full p-4 rounded-xl ${T.card} mb-4`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-base font-black text-white shrink-0">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className={`font-medium ${T.text}`}>{userName}</p>
+                <p className={`text-sm sm:text-base font-medium ${T.text}`}>{userName}</p>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[11px] font-normal uppercase ${role === "admin" ? "text-purple-400" : "text-blue-400"}`}>{role}</span>
-                  <span className="flex items-center gap-1 text-[11px] text-emerald-400">
+                  <span className={`text-[10px] sm:text-[11px] font-normal uppercase ${role === "admin" ? "text-purple-400" : "text-blue-400"}`}>{role}</span>
+                  <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-400">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     Online
                   </span>

@@ -36,6 +36,17 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-slate-700 rounded-full;
   }
+
+  @media (max-width: 767px) {
+    .mobile-scrollbar-hide {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .mobile-scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 @keyframes shimmer {

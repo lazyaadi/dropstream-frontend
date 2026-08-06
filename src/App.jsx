@@ -900,6 +900,14 @@ function AppInner() {
     socket.emit("set_user_pro", { email: userEmail, proPin });
   }, [userEmail]);
 
+  const openUpgradeProModal = useCallback(() => {
+    setShowHistory(false);
+    setShowMembers(false);
+    setShowOnlineUsers(false);
+    setShowMobileMenu(false);
+    requestAnimationFrame(() => setShowProModal(true));
+  }, []);
+
   const filteredTasks = useMemo(() => {
     if (!searchQ.trim()) return tasks;
     const q = searchQ.toLowerCase();
@@ -1179,7 +1187,7 @@ function AppInner() {
 
             <div className={`mt-8 pt-4 border-t ${T.divider} flex items-center justify-between`}>
               <button onClick={() => setShowAbout(true)}
-                className={`text-[9px] font-semibold uppercase tracking-widest bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent animate-pulse hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1`}>
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[9px] font-semibold uppercase tracking-widest transition cursor-pointer ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
                 <Info size={11}/>How it works
               </button>
               <button onClick={() => setShowContact(true)}
@@ -1219,15 +1227,15 @@ function AppInner() {
         {showAdd && <AddTaskModal key="add-task-modal" onAdd={addTask} onClose={() => setShowAdd(false)} theme={theme} isPro={isPro} onUpgrade={() => setShowProModal(true)} />}
         {showProModal && <ProModal key="pro-modal" isPro={isPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
-        {showHistory && <HistoryPanel key="history-panel" history={history} isPro={isPro} onClose={() => setShowHistory(false)} onUpgrade={() => setShowProModal(true)} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
-        {showMembers && <MembersPanel key="members-panel" members={members} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={isPro} onUpgrade={() => setShowProModal(true)} theme={theme} />}
+        {showHistory && <HistoryPanel key="history-panel" history={history} isPro={isPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
+        {showMembers && <MembersPanel key="members-panel" members={members} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={isPro} onUpgrade={openUpgradeProModal} theme={theme} />}
         {showOnlineUsers && (
           <OnlineUsersPanel key="online-users-panel"
             users={onlineUsers}
             members={members}
             isPro={isPro}
             onClose={() => setShowOnlineUsers(false)}
-            onUpgrade={() => { setShowOnlineUsers(false); setShowProModal(true); }}
+            onUpgrade={openUpgradeProModal}
             theme={theme}
             currentUser={{ name: userName, email: userEmail }}
           />
@@ -1283,7 +1291,7 @@ function AppInner() {
           setShowHistory={setShowHistory}
           setShowMembers={setShowMembers}
           setShowOnlineUsers={setShowOnlineUsers}
-          onOpenProModal={() => setShowProModal(true)}
+          onOpenProModal={openUpgradeProModal}
           handleLeave={handleLeave}
           setIsMenuOpen={setShowMobileMenu}
         />
@@ -1391,9 +1399,8 @@ function AppInner() {
               <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
             </div>
             <button onClick={() => setShowAbout(true)}
-              className={`flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
-                bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent animate-pulse hover:opacity-90
-                ${theme === "light" ? "border-gray-200 bg-white shadow-sm" : "border-slate-700/80"}`}>
+              className={`inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
+                ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 shadow-sm" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
               <Info size={11}/>About SyncBoard
             </button>
             <button onClick={() => setShowContact(true)}

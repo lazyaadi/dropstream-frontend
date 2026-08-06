@@ -20,28 +20,36 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
     if (normalized.includes("progress")) return "text-amber-400 bg-amber-500/10 border-amber-500/30";
     return "text-red-400 bg-red-500/10 border-red-500/30";
   };
+  const statusLabel = (status) => {
+    const normalized = String(status || "").toLowerCase();
+    if (normalized.includes("done")) return "DONE";
+    if (normalized.includes("progress")) return "IN PROGRESS";
+    return "TODO";
+  };
   const renderAction = (action) => {
     if (!action) return null;
-    const taskMatch = action.match(/^(added|moved|deleted|removed) task '(.+?)'(?: to (To Do|In Progress|Done))?$/i);
+    const taskMatch = action.match(/^(created|added|moved|deleted|removed) task '(.+?)'(?: to (To Do|In Progress|Done))?$/i);
     if (taskMatch) {
       const [, verb, taskTitle, targetStatus] = taskMatch;
-      const verbLabel = verb.toLowerCase() === "moved"
+      const normalizedVerb = verb.toLowerCase();
+      const verbLabel = normalizedVerb === "moved"
         ? "moved task"
-        : verb.toLowerCase() === "deleted"
+        : normalizedVerb === "deleted"
           ? "deleted task"
-          : verb.toLowerCase() === "removed"
+          : normalizedVerb === "removed"
             ? "removed task"
-            : "added task";
+            : "created task";
+      const resolvedTargetStatus = targetStatus || (normalizedVerb === "created" || normalizedVerb === "added" ? "To Do" : "");
       return (
-        <span className="block">
-          <span className="block">{`${verbLabel} :`}</span>
+        <>
+          <span className="whitespace-nowrap">{`${verbLabel} :`}</span>
           <span className={`block mt-0.5 font-semibold ${theme === "light" ? "text-slate-900" : "text-slate-100"}`}>{`"${taskTitle}"`}</span>
-          {targetStatus && (
-            <span className={`block w-fit mt-1 px-2 py-0.5 rounded-md border text-[8px] font-medium uppercase tracking-widest ${statusTone(targetStatus)}`}>
-              {`→ ${targetStatus}`}
+          {resolvedTargetStatus && (
+            <span className={`block w-fit mt-1 px-2 py-0.5 rounded-md border text-[8px] font-medium uppercase tracking-widest ${statusTone(resolvedTargetStatus)}`}>
+              {`→ ${statusLabel(resolvedTargetStatus)}`}
             </span>
           )}
-        </span>
+        </>
       );
     }
     return action.split(/(To Do|In Progress|Done)/g).map((part, i) => {

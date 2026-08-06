@@ -107,7 +107,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
   if (isPro) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-3"
+        className="fixed inset-0 z-220 flex items-center justify-center px-3 py-6 sm:px-6 sm:py-8"
         style={{ background: isDark ? "rgba(2,6,23,0.86)" : "rgba(15,23,42,0.35)", backdropFilter: "blur(14px)" }}
         onClick={onClose}
       >
@@ -265,7 +265,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
     <AnimatePresence>
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center z-110 p-4"
+          className="fixed inset-0 flex items-center justify-center z-230 p-4"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}
           onClick={onClose}
         >
@@ -337,7 +337,7 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
         }
       `}</style>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+        className="fixed inset-0 z-220 flex items-center justify-center px-3 py-6 sm:px-6 sm:py-8"
         style={{ background: isDark ? "rgba(2,6,23,0.88)" : "rgba(15,23,42,0.6)", backdropFilter: "blur(14px)", overflow: "auto" }}
         onClick={onClose}
       >
