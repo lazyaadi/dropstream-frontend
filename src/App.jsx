@@ -283,6 +283,10 @@ function AppInner() {
   const [activeTask, setActiveTask]         = useState(null);
   const [toasts, setToasts]                 = useState([]);
   const [syncPulse, setSyncPulse]           = useState(false);
+
+  useEffect(() => {
+    console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
+  }, [isPro]);
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, input: "" });
   const [searchQ, setSearchQ]               = useState("");
   const [typers, setTypers]                 = useState([]);
@@ -460,10 +464,17 @@ function AppInner() {
                 const backendExpiresAt = profile?.proExpiresAt || null;
                 const finalIsPro = backendIsPro || mergedIsPro;
                 const finalExpiresAt = backendExpiresAt || mergedProExpiresAt || null;
+                console.log('[DEBUG CLIENT PROFILE HYDRATION]', {
+                  localStorageActive: localStorage.getItem('sb_pro_active'),
+                  localStorageExpiry: localStorage.getItem(PRO_EXPIRES_KEY),
+                  apiProfileIsPro: profile?.isPro,
+                  evaluatedFinalIsPro: finalIsPro,
+                });
                 setIsPro(finalIsPro);
                 setProExpiresAt(finalExpiresAt);
                 if (finalIsPro && finalExpiresAt) {
                   localStorage.setItem(PRO_EXPIRES_KEY, finalExpiresAt);
+                  localStorage.setItem("sb_pro_active", "true");
                 }
               }
             } catch (profileErr) {
@@ -631,6 +642,11 @@ function AppInner() {
     });
 
     socket.on("load_workspace", ({ tasks: t, projectName: pn, role: r, history: h, members: m, taskCount, resetAt, isPro: sp, proExpiresAt: exp }) => {
+      console.log('[DEBUG CLIENT RECEIVED load_workspace]', {
+        incomingIsPro: sp,
+        incomingProExpiresAt: exp,
+        currentStateIsPro: isPro,
+      });
       setTasks(t || []); setProjectName(pn); setIsJoined(true); setAutoJoining(false);
       finishBoardHydrationRef.current();
       setRole(r || "member"); setHistory(h || []); setMembers(m || []);
