@@ -262,6 +262,7 @@ function AppInner() {
   const [showAbout, setShowAbout]           = useState(false);
   const [showContact, setShowContact]       = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showOfflineNotice, setShowOfflineNotice] = useState(false);
   const [activeTask, setActiveTask]         = useState(null);
   const [toasts, setToasts]                 = useState([]);
   const [syncPulse, setSyncPulse]           = useState(false);
@@ -323,6 +324,34 @@ function AppInner() {
       document.body.style.overscrollBehavior = previousOverscrollBehavior;
     };
   }, [overlayIsActive]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    if (!isJoined) return undefined;
+
+    const noticeDelay = 3000;
+    let timerId = null;
+    const hideNowHandler = () => setShowOfflineNotice(false);
+
+    const triggerNotice = () => {
+      setShowOfflineNotice(true);
+      if (timerId) window.clearTimeout(timerId);
+      timerId = window.setTimeout(() => setShowOfflineNotice(false), noticeDelay);
+    };
+
+    if (!window.navigator.onLine) {
+      triggerNotice();
+    }
+
+    window.addEventListener("offline", triggerNotice);
+    window.addEventListener("online", hideNowHandler);
+
+    return () => {
+      if (timerId) window.clearTimeout(timerId);
+      window.removeEventListener("offline", triggerNotice);
+      window.removeEventListener("online", hideNowHandler);
+    };
+  }, [isJoined]);
 
   finishBoardHydrationRef.current = () => {
     if (boardHydrateTimerRef.current) clearTimeout(boardHydrateTimerRef.current);
@@ -896,16 +925,15 @@ function AppInner() {
   }, [isPro, userTaskCount, role, addToast]);
 
   const handleProActivated = useCallback((proPin) => {
+    setIsPro(true);
     setShowProModal(false);
+    localStorage.setItem("sb_pro_active", "true");
+    localStorage.setItem(PRO_PIN_KEY, proPin);
     socket.emit("set_user_pro", { email: userEmail, proPin });
   }, [userEmail]);
 
   const openUpgradeProModal = useCallback(() => {
-    setShowHistory(false);
-    setShowMembers(false);
-    setShowOnlineUsers(false);
-    setShowMobileMenu(false);
-    requestAnimationFrame(() => setShowProModal(true));
+    setShowProModal(true);
   }, []);
 
   const filteredTasks = useMemo(() => {
@@ -1187,7 +1215,7 @@ function AppInner() {
 
             <div className={`mt-8 pt-4 border-t ${T.divider} flex items-center justify-between`}>
               <button onClick={() => setShowAbout(true)}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[9px] font-semibold uppercase tracking-widest transition cursor-pointer ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
+                className={`loop-bob inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[9px] font-semibold uppercase tracking-widest transition cursor-pointer ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
                 <Info size={11}/>How it works
               </button>
               <button onClick={() => setShowContact(true)}
@@ -1241,6 +1269,24 @@ function AppInner() {
           />
         )}
         {otherTypers.length > 0 && <TypingIndicator key="typing-indicator" typers={otherTypers} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showOfflineNotice && (
+          <motion.div
+            key="offline-notice"
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.22 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[260] px-3 py-2 rounded-xl border border-red-500/40 bg-red-500/15 text-red-200 shadow-2xl backdrop-blur-md"
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em]">No internet connection</span>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {total > 0 && (
@@ -1399,7 +1445,7 @@ function AppInner() {
               <div className="w-1 h-1 rounded-full bg-emerald-500/50" />
             </div>
             <button onClick={() => setShowAbout(true)}
-              className={`inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
+              className={`loop-bob inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer
                 ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 shadow-sm" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
               <Info size={11}/>About SyncBoard
             </button>

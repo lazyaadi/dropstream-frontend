@@ -30,6 +30,30 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
   const daysLabel = daysLeft === 1 ? "Day Left" : "Days Left";
   const featuresCount = PRO_FEATURES.length;
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    if (!window.matchMedia("(min-width: 768px)").matches) return undefined;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousHtmlOverflowY = html.style.overflowY;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyOverflowY = body.style.overflowY;
+
+    html.style.overflow = "hidden";
+    html.style.overflowY = "hidden";
+    body.style.overflow = "hidden";
+    body.style.overflowY = "hidden";
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      html.style.overflowY = previousHtmlOverflowY;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overflowY = previousBodyOverflowY;
+    };
+  }, []);
+
   const copyToClipboard = (text, key) => {
     navigator.clipboard.writeText(text);
     setCopied(key);

@@ -37,16 +37,33 @@
     @apply bg-slate-700 rounded-full;
   }
 
+  .loop-bob {
+    animation: bob 2.6s ease-in-out infinite;
+  }
+
   @media (max-width: 767px) {
     .mobile-scrollbar-hide {
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
 
+    html,
+    body {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
     .mobile-scrollbar-hide::-webkit-scrollbar {
       display: none;
     }
   }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes shimmer {
