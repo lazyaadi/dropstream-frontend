@@ -170,15 +170,32 @@ const validatePin = (p) => {
 
 const getPersistedProState = () => {
   if (typeof window === "undefined") return { isPro: false, proExpiresAt: null };
+  const persistedActive = localStorage.getItem("sb_pro_active") === "true";
   const persistedExpiresAt = localStorage.getItem(PRO_EXPIRES_KEY);
-  if (!persistedExpiresAt) return { isPro: false, proExpiresAt: null };
-  const expiresAtMs = new Date(persistedExpiresAt).getTime();
-  if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
+
+  if (!persistedActive) return { isPro: false, proExpiresAt: null };
+
+  if (persistedExpiresAt) {
+    const expiresAtMs = new Date(persistedExpiresAt).getTime();
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
+      localStorage.removeItem(PRO_EXPIRES_KEY);
+      localStorage.removeItem(PRO_PIN_KEY);
+      localStorage.removeItem("sb_pro_active");
+      return { isPro: false, proExpiresAt: null };
+    }
+  }
+
+  if (persistedExpiresAt === null) {
+    return { isPro: true, proExpiresAt: null };
+  }
+
+  if (!Number.isFinite(new Date(persistedExpiresAt).getTime())) {
     localStorage.removeItem(PRO_EXPIRES_KEY);
     localStorage.removeItem(PRO_PIN_KEY);
     localStorage.removeItem("sb_pro_active");
     return { isPro: false, proExpiresAt: null };
   }
+
   return { isPro: true, proExpiresAt: persistedExpiresAt };
 };
 
