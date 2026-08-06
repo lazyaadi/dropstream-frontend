@@ -22,6 +22,7 @@ const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "";
 const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
 const PRO_PIN_KEY = "sb_pro_pin";
+const PRO_EXPIRES_KEY = "sb_pro_expires_at";
 const THEME_KEY = "sb_theme";
 const FREE_TASK_LIMIT = 3;
 const PRO_TASK_LIMIT = 3000;
@@ -167,6 +168,20 @@ const validatePin = (p) => {
   return null;
 };
 
+const getPersistedProState = () => {
+  if (typeof window === "undefined") return { isPro: false, proExpiresAt: null };
+  const persistedExpiresAt = localStorage.getItem(PRO_EXPIRES_KEY);
+  if (!persistedExpiresAt) return { isPro: false, proExpiresAt: null };
+  const expiresAtMs = new Date(persistedExpiresAt).getTime();
+  if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
+    localStorage.removeItem(PRO_EXPIRES_KEY);
+    localStorage.removeItem(PRO_PIN_KEY);
+    localStorage.removeItem("sb_pro_active");
+    return { isPro: false, proExpiresAt: null };
+  }
+  return { isPro: true, proExpiresAt: persistedExpiresAt };
+};
+
 import ParticleBg from "./components/effects/ParticleBg.jsx";
 import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
@@ -238,7 +253,8 @@ function AppInner() {
   const [wsPin, setWsPin]               = useState("");
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
-  const [isPro, setIsPro]               = useState(false);
+  const persistedProState = useMemo(() => getPersistedProState(), []);
+  const [isPro, setIsPro]               = useState(() => persistedProState.isPro);
 
   const [isJoined, setIsJoined]       = useState(() => {
     const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
@@ -252,7 +268,7 @@ function AppInner() {
   const [error, setError]             = useState("");
   const [userTaskCount, setUserTaskCount] = useState(0);
   const [userResetDate, setUserResetDate] = useState(null);
-  const [proExpiresAt, setProExpiresAt]   = useState(null);
+  const [proExpiresAt, setProExpiresAt]   = useState(() => persistedProState.proExpiresAt);
 
   const [showAdd, setShowAdd]               = useState(false);
   const [showHistory, setShowHistory]       = useState(false);
@@ -396,8 +412,6 @@ function AppInner() {
   }, []);
 
   useEffect(() => {
-    localStorage.removeItem(PRO_PIN_KEY);
-    localStorage.removeItem("sb_pro_active");
     sessionStorage.removeItem("sb_workspace_pin");
   }, []);
 
@@ -422,8 +436,14 @@ function AppInner() {
           if (s.history) setHistory(s.history);
           if (s.taskCount !== undefined) setUserTaskCount(s.taskCount);
           if (s.resetAt !== undefined) setUserResetDate(s.resetAt);
-          if (s.isPro) setIsPro(s.isPro);
-          if (s.proExpiresAt) setProExpiresAt(s.proExpiresAt);
+          const restoredProState = getPersistedProState();
+          const mergedIsPro = !!s.isPro || restoredProState.isPro;
+          const mergedProExpiresAt = s.proExpiresAt || restoredProState.proExpiresAt || null;
+          if (mergedIsPro) setIsPro(true);
+          if (mergedProExpiresAt) setProExpiresAt(mergedProExpiresAt);
+          if (mergedIsPro && mergedProExpiresAt) {
+            localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
+          }
           setBoardHydrating(!(s.tasks && s.tasks.length > 0));
 
           if (socket.connected) {
@@ -516,10 +536,14 @@ function AppInner() {
 
     socket.on("auth_success", (data) => {
       setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
-      setIsPro(!!data.isPro);
+      const restoredProState = getPersistedProState();
+      const mergedIsPro = !!data.isPro || restoredProState.isPro;
+      const mergedProExpiresAt = data.proExpiresAt || restoredProState.proExpiresAt || null;
+      setIsPro(mergedIsPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
-      setProExpiresAt(data.proExpiresAt || null);
+      setProExpiresAt(mergedProExpiresAt);
+      if (mergedIsPro && mergedProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
       setUserName(data.name);
       setUserEmail(data.email);
       setAuthReady(true);
@@ -555,6 +579,8 @@ function AppInner() {
     socket.on("pro_activated", ({ taskCount, resetAt, proExpiresAt: exp }) => {
       setIsPro(true); setUserTaskCount(taskCount || 0); setUserResetDate(resetAt || null);
       setProExpiresAt(exp || null);
+      if (exp) localStorage.setItem(PRO_EXPIRES_KEY, exp);
+      localStorage.setItem("sb_pro_active", "true");
       addToast("Pro activated!", "success");
     });
 
@@ -566,6 +592,9 @@ function AppInner() {
     socket.on("pro_deactivated", () => {
       setIsPro(false);
       setProExpiresAt(null);
+      localStorage.removeItem(PRO_EXPIRES_KEY);
+      localStorage.removeItem(PRO_PIN_KEY);
+      localStorage.removeItem("sb_pro_active");
       addToast("Pro deactivated", "warn");
     });
 
@@ -580,8 +609,12 @@ function AppInner() {
       setError(""); setWsErrorType(null);
       if (taskCount !== undefined) setUserTaskCount(taskCount);
       if (resetAt !== undefined) setUserResetDate(resetAt);
-      setIsPro(!!sp);
-      setProExpiresAt(exp || null);
+      const restoredProState = getPersistedProState();
+      const mergedIsPro = !!sp || restoredProState.isPro;
+      const mergedProExpiresAt = exp || restoredProState.proExpiresAt || null;
+      setIsPro(mergedIsPro);
+      setProExpiresAt(mergedProExpiresAt);
+      if (mergedIsPro && mergedProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
 
       localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify({
         workspaceName: workspaceNameRef.current,
@@ -594,8 +627,8 @@ function AppInner() {
         history: h || [],
         taskCount: taskCount || 0,
         resetAt: resetAt || null,
-        isPro: !!sp,
-        proExpiresAt: exp || null,
+        isPro: mergedIsPro,
+        proExpiresAt: mergedProExpiresAt,
         joinedAt: new Date().toISOString()
       }));
     });
@@ -1021,6 +1054,7 @@ function AppInner() {
                   <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pro Active</p>
                   <button onClick={() => {
                     localStorage.removeItem(PRO_PIN_KEY);
+                    localStorage.removeItem(PRO_EXPIRES_KEY);
                     localStorage.removeItem("sb_pro_active");
                     setIsPro(false);
                     setProExpiresAt(null);
@@ -1279,7 +1313,8 @@ function AppInner() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.22 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[260] px-3 py-2 rounded-xl border border-red-500/40 bg-red-500/15 text-red-200 shadow-2xl backdrop-blur-md"
+            className="fixed top-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl border border-red-500/40 bg-red-500/15 text-red-200 shadow-2xl backdrop-blur-md"
+            style={{ zIndex: 260 }}
           >
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
