@@ -279,6 +279,7 @@ function AppInner() {
   const [showContact, setShowContact]       = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showOfflineNotice, setShowOfflineNotice] = useState(false);
+  const [profileHydrating, setProfileHydrating] = useState(false);
   const [activeTask, setActiveTask]         = useState(null);
   const [toasts, setToasts]                 = useState([]);
   const [syncPulse, setSyncPulse]           = useState(false);
@@ -424,6 +425,7 @@ function AppInner() {
     const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
     if (activeSession) {
       try {
+        setProfileHydrating(true);
         const s = JSON.parse(activeSession);
         if (s.workspaceName && s.userEmail && s.userName) {
           setWorkspaceName(s.workspaceName);
@@ -446,21 +448,47 @@ function AppInner() {
           }
           setBoardHydrating(!(s.tasks && s.tasks.length > 0));
 
-          if (socket.connected) {
-            setAutoJoining(true);
-            socket.emit("rejoin_workspace", {
-              workspaceName: s.workspaceName,
-              userName: s.userName,
-              email: s.userEmail,
-            });
-          }
+          (async () => {
+            try {
+              const response = await fetch(`${SERVER_URL}/api/user/profile?email=${encodeURIComponent(s.userEmail)}`, {
+                credentials: "include",
+              });
+              if (response.ok) {
+                const result = await response.json();
+                const profile = result?.profile || null;
+                const backendIsPro = !!profile?.isPro;
+                const backendExpiresAt = profile?.proExpiresAt || null;
+                const finalIsPro = backendIsPro || mergedIsPro;
+                const finalExpiresAt = backendExpiresAt || mergedProExpiresAt || null;
+                setIsPro(finalIsPro);
+                setProExpiresAt(finalExpiresAt);
+                if (finalIsPro && finalExpiresAt) {
+                  localStorage.setItem(PRO_EXPIRES_KEY, finalExpiresAt);
+                }
+              }
+            } catch (profileErr) {
+              console.warn("[profile hydrate] Failed to refresh profile:", profileErr?.message || profileErr);
+            } finally {
+              if (socket.connected) {
+                setAutoJoining(true);
+                socket.emit("rejoin_workspace", {
+                  workspaceName: s.workspaceName,
+                  userName: s.userName,
+                  email: s.userEmail,
+                });
+              }
 
-          setAuthReady(true);
+              setAuthReady(true);
+              setProfileHydrating(false);
+            }
+          })();
         } else {
           localStorage.removeItem(WORKSPACE_SESSION_KEY);
+          setProfileHydrating(false);
         }
       } catch (err) {
         localStorage.removeItem(WORKSPACE_SESSION_KEY);
+        setProfileHydrating(false);
       }
     }
 
@@ -995,6 +1023,18 @@ function AppInner() {
         <div className="relative z-10 text-center">
           <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className={`text-[11px] font-black ${T.label} uppercase tracking-widest`}>Connecting…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileHydrating && isJoined) {
+    return (
+      <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
+        <ParticleBg theme={theme} />
+        <div className="relative z-10 text-center">
+          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className={`text-[11px] font-black ${T.label} uppercase tracking-widest`}>Restoring profile…</p>
         </div>
       </div>
     );
