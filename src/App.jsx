@@ -480,14 +480,6 @@ function AppInner() {
           if (s.history) setHistory(s.history);
           if (s.taskCount !== undefined) setUserTaskCount(s.taskCount);
           if (s.resetAt !== undefined) setUserResetDate(s.resetAt);
-          const restoredProState = getPersistedProState();
-          const mergedIsPro = !!s.isPro || restoredProState.isPro;
-          const mergedProExpiresAt = s.proExpiresAt || restoredProState.proExpiresAt || null;
-          if (mergedIsPro) setIsPro(true);
-          if (mergedProExpiresAt) setProExpiresAt(mergedProExpiresAt);
-          if (mergedIsPro && mergedProExpiresAt) {
-            localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
-          }
           setBoardHydrating(!(s.tasks && s.tasks.length > 0));
 
           (async () => {
@@ -498,21 +490,19 @@ function AppInner() {
               if (response.ok) {
                 const result = await response.json();
                 const profile = result?.profile || null;
-                const backendIsPro = !!profile?.isPro;
-                const backendExpiresAt = profile?.proExpiresAt || null;
-                const finalIsPro = backendIsPro || mergedIsPro;
-                const finalExpiresAt = backendExpiresAt || mergedProExpiresAt || null;
-                console.log('[DEBUG CLIENT PROFILE HYDRATION]', {
-                  localStorageActive: localStorage.getItem('sb_pro_active'),
-                  localStorageExpiry: localStorage.getItem(PRO_EXPIRES_KEY),
-                  apiProfileIsPro: profile?.isPro,
-                  evaluatedFinalIsPro: finalIsPro,
-                });
-                setIsPro(finalIsPro);
-                setProExpiresAt(finalExpiresAt);
-                if (finalIsPro && finalExpiresAt) {
-                  localStorage.setItem(PRO_EXPIRES_KEY, finalExpiresAt);
+                const serverIsPro = !!profile?.isPro;
+                const serverExpiresAt = profile?.proExpiresAt || null;
+                setIsPro(serverIsPro);
+                setProExpiresAt(serverExpiresAt);
+                if (serverIsPro) {
+                  if (serverExpiresAt) {
+                    localStorage.setItem(PRO_EXPIRES_KEY, serverExpiresAt);
+                  }
                   localStorage.setItem("sb_pro_active", "true");
+                } else {
+                  localStorage.removeItem(PRO_EXPIRES_KEY);
+                  localStorage.removeItem(PRO_PIN_KEY);
+                  localStorage.removeItem("sb_pro_active");
                 }
               }
             } catch (profileErr) {
@@ -613,14 +603,20 @@ function AppInner() {
 
     socket.on("auth_success", (data) => {
       setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
-      const restoredProState = getPersistedProState();
-      const mergedIsPro = !!data.isPro || restoredProState.isPro;
-      const mergedProExpiresAt = data.proExpiresAt || restoredProState.proExpiresAt || null;
-      setIsPro(mergedIsPro);
+      const serverIsPro = !!data.isPro;
+      const serverProExpiresAt = data.proExpiresAt || null;
+      setIsPro(serverIsPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
-      setProExpiresAt(mergedProExpiresAt);
-      if (mergedIsPro && mergedProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
+      setProExpiresAt(serverProExpiresAt);
+      if (serverIsPro) {
+        if (serverProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, serverProExpiresAt);
+        localStorage.setItem("sb_pro_active", "true");
+      } else {
+        localStorage.removeItem(PRO_EXPIRES_KEY);
+        localStorage.removeItem(PRO_PIN_KEY);
+        localStorage.removeItem("sb_pro_active");
+      }
       setUserName(data.name);
       setUserEmail(data.email);
       setAuthReady(true);
@@ -691,12 +687,18 @@ function AppInner() {
       setError(""); setWsErrorType(null);
       if (taskCount !== undefined) setUserTaskCount(taskCount);
       if (resetAt !== undefined) setUserResetDate(resetAt);
-      const restoredProState = getPersistedProState();
-      const mergedIsPro = !!sp || restoredProState.isPro;
-      const mergedProExpiresAt = exp || restoredProState.proExpiresAt || null;
-      setIsPro(mergedIsPro);
-      setProExpiresAt(mergedProExpiresAt);
-      if (mergedIsPro && mergedProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, mergedProExpiresAt);
+      const serverIsPro = !!sp;
+      const serverProExpiresAt = exp || null;
+      setIsPro(serverIsPro);
+      setProExpiresAt(serverProExpiresAt);
+      if (serverIsPro) {
+        if (serverProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, serverProExpiresAt);
+        localStorage.setItem("sb_pro_active", "true");
+      } else {
+        localStorage.removeItem(PRO_EXPIRES_KEY);
+        localStorage.removeItem(PRO_PIN_KEY);
+        localStorage.removeItem("sb_pro_active");
+      }
 
       localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify({
         workspaceName: workspaceNameRef.current,
@@ -709,8 +711,8 @@ function AppInner() {
         history: h || [],
         taskCount: taskCount || 0,
         resetAt: resetAt || null,
-        isPro: mergedIsPro,
-        proExpiresAt: mergedProExpiresAt,
+        isPro: serverIsPro,
+        proExpiresAt: serverProExpiresAt,
         joinedAt: new Date().toISOString()
       }));
     });
@@ -1557,7 +1559,7 @@ function AppInner() {
                   onUpgrade={() => setShowProModal(true)}
                 />
               );
-            })}
+            })}   
           </div>
           <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18, 0.67, 0.6, 1)" }}>
             {activeTask ? (
