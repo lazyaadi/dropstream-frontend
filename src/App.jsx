@@ -439,6 +439,8 @@ function AppInner() {
     if (typeof window === "undefined") return undefined;
     if (!isJoined) return undefined;
 
+    document.body.classList.add("workspace-scrollbar-hide");
+
     const noticeDelay = 3000;
     let timerId = null;
     const hideNowHandler = () => setShowOfflineNotice(false);
@@ -460,6 +462,7 @@ function AppInner() {
       if (timerId) window.clearTimeout(timerId);
       window.removeEventListener("offline", triggerNotice);
       window.removeEventListener("online", hideNowHandler);
+      document.body.classList.remove("workspace-scrollbar-hide");
     };
   }, [isJoined]);
 
@@ -683,7 +686,7 @@ function AppInner() {
       } else {
         clearPersistedProState(data.email || userEmailRef.current);
       }
-      setUserName(data.name);
+      setUserName(userNameRef.current?.trim() || data.name || "");
       setUserEmail(data.email);
       setAuthReady(true);
     });
@@ -1137,9 +1140,19 @@ function AppInner() {
     return (
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
         <ParticleBg theme={theme} />
-        <div className="relative z-10 text-center">
-          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className={`text-[11px] font-black ${T.label} uppercase tracking-widest`}>Connecting…</p>
+        <div className="relative z-10 w-full max-w-sm px-4">
+          <div className={`rounded-3xl border shadow-2xl px-6 py-5 text-center backdrop-blur-xl ${T.loginCard}`}>
+            <div className="mx-auto w-14 h-14 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-4">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}>Opening workspace</p>
+            <p className={`text-sm mt-2 ${T.text}`}>Syncing your board and loading your session.</p>
+            <div className="mt-4 flex items-center justify-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse [animation-delay:120ms]" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse [animation-delay:240ms]" />
+            </div>
+          </div>
         </div>
       </div>
     );
