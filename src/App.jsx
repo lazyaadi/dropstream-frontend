@@ -23,6 +23,7 @@ const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
 const PRO_PIN_KEY = "sb_pro_pin";
 const PRO_EXPIRES_KEY = "sb_pro_expires_at";
+const PRO_ACTIVE_KEY = "sb_pro_active";
 const THEME_KEY = "sb_theme";
 const FREE_TASK_LIMIT = 3;
 const PRO_TASK_LIMIT = 3000;
@@ -168,35 +169,85 @@ const validatePin = (p) => {
   return null;
 };
 
-const getPersistedProState = () => {
+const getStoredSessionEmail = () => {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw);
+    return normEmail(parsed?.userEmail || parsed?.email || "");
+  } catch {
+    return "";
+  }
+};
+
+const getProStorageKey = (baseKey, email) => {
+  const safeEmail = normEmail(email || getStoredSessionEmail());
+  return safeEmail ? `${baseKey}:${safeEmail}` : "";
+};
+
+const clearPersistedProState = (email) => {
+  if (typeof window === "undefined") return;
+  const activeKey = getProStorageKey(PRO_ACTIVE_KEY, email);
+  const pinKey = getProStorageKey(PRO_PIN_KEY, email);
+  const expiresKey = getProStorageKey(PRO_EXPIRES_KEY, email);
+  if (activeKey) localStorage.removeItem(activeKey);
+  if (pinKey) localStorage.removeItem(pinKey);
+  if (expiresKey) localStorage.removeItem(expiresKey);
+  localStorage.removeItem(PRO_ACTIVE_KEY);
+  localStorage.removeItem(PRO_PIN_KEY);
+  localStorage.removeItem(PRO_EXPIRES_KEY);
+};
+
+const persistProState = (email, { isPro, proExpiresAt = null, proPin = null } = {}) => {
+  if (typeof window === "undefined") return;
+  const activeKey = getProStorageKey(PRO_ACTIVE_KEY, email);
+  const pinKey = getProStorageKey(PRO_PIN_KEY, email);
+  const expiresKey = getProStorageKey(PRO_EXPIRES_KEY, email);
+  if (!activeKey) return;
+  if (isPro) {
+    localStorage.setItem(activeKey, "true");
+    if (proPin) localStorage.setItem(pinKey, proPin);
+    else localStorage.removeItem(pinKey);
+    if (proExpiresAt) localStorage.setItem(expiresKey, proExpiresAt);
+    else localStorage.removeItem(expiresKey);
+  } else {
+    localStorage.removeItem(activeKey);
+    localStorage.removeItem(pinKey);
+    localStorage.removeItem(expiresKey);
+  }
+  localStorage.removeItem(PRO_ACTIVE_KEY);
+  localStorage.removeItem(PRO_PIN_KEY);
+  localStorage.removeItem(PRO_EXPIRES_KEY);
+};
+
+const getPersistedProState = (email) => {
   if (typeof window === "undefined") return { isPro: false, proExpiresAt: null };
-  const persistedActive = localStorage.getItem("sb_pro_active") === "true";
-  const persistedExpiresAt = localStorage.getItem(PRO_EXPIRES_KEY);
+  const safeEmail = normEmail(email || getStoredSessionEmail());
+  const activeKey = getProStorageKey(PRO_ACTIVE_KEY, safeEmail);
+  const expiresKey = getProStorageKey(PRO_EXPIRES_KEY, safeEmail);
+  const legacyActive = localStorage.getItem(PRO_ACTIVE_KEY) === "true";
+  const legacyExpiresAt = localStorage.getItem(PRO_EXPIRES_KEY);
 
-  if (!persistedActive) return { isPro: false, proExpiresAt: null };
+  const persistedActive = activeKey ? localStorage.getItem(activeKey) === "true" : false;
+  const persistedExpiresAt = expiresKey ? localStorage.getItem(expiresKey) : null;
 
-  if (persistedExpiresAt) {
-    const expiresAtMs = new Date(persistedExpiresAt).getTime();
+  if (!persistedActive && !legacyActive) return { isPro: false, proExpiresAt: null };
+
+  const effectiveExpiresAt = persistedExpiresAt || legacyExpiresAt || null;
+  if (effectiveExpiresAt) {
+    const expiresAtMs = new Date(effectiveExpiresAt).getTime();
     if (!Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now()) {
-      localStorage.removeItem(PRO_EXPIRES_KEY);
-      localStorage.removeItem(PRO_PIN_KEY);
-      localStorage.removeItem("sb_pro_active");
+      clearPersistedProState(safeEmail);
       return { isPro: false, proExpiresAt: null };
     }
   }
 
-  if (persistedExpiresAt === null) {
-    return { isPro: true, proExpiresAt: null };
+  if (!persistedActive && legacyActive && safeEmail) {
+    persistProState(safeEmail, { isPro: true, proExpiresAt: effectiveExpiresAt });
   }
 
-  if (!Number.isFinite(new Date(persistedExpiresAt).getTime())) {
-    localStorage.removeItem(PRO_EXPIRES_KEY);
-    localStorage.removeItem(PRO_PIN_KEY);
-    localStorage.removeItem("sb_pro_active");
-    return { isPro: false, proExpiresAt: null };
-  }
-
-  return { isPro: true, proExpiresAt: persistedExpiresAt };
+  return { isPro: true, proExpiresAt: effectiveExpiresAt };
 };
 
 import ParticleBg from "./components/effects/ParticleBg.jsx";
@@ -270,7 +321,7 @@ function AppInner() {
   const [wsPin, setWsPin]               = useState("");
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
-  const persistedProState = useMemo(() => getPersistedProState(), []);
+  const persistedProState = useMemo(() => getPersistedProState(getStoredSessionEmail()), []);
   const [isPro, setIsPro]               = useState(() => persistedProState.isPro);
 
   const [isJoined, setIsJoined]       = useState(() => {
@@ -437,6 +488,12 @@ function AppInner() {
   useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
   useEffect(() => { wsPinRef.current = wsPin; }, [wsPin]);
   useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
+  useEffect(() => {
+    if (!authReady || !userEmail) return;
+    const persisted = getPersistedProState(userEmail);
+    setIsPro(persisted.isPro);
+    setProExpiresAt(persisted.proExpiresAt);
+  }, [authReady, userEmail]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -512,14 +569,9 @@ function AppInner() {
                 setIsPro(serverIsPro);
                 setProExpiresAt(serverExpiresAt);
                 if (serverIsPro) {
-                  if (serverExpiresAt) {
-                    localStorage.setItem(PRO_EXPIRES_KEY, serverExpiresAt);
-                  }
-                  localStorage.setItem("sb_pro_active", "true");
+                    persistProState(s.userEmail, { isPro: true, proExpiresAt: serverExpiresAt });
                 } else {
-                  localStorage.removeItem(PRO_EXPIRES_KEY);
-                  localStorage.removeItem(PRO_PIN_KEY);
-                  localStorage.removeItem("sb_pro_active");
+                    clearPersistedProState(s.userEmail);
                 }
               }
             } catch (profileErr) {
@@ -627,12 +679,9 @@ function AppInner() {
       setUserResetDate(data.resetAt || null);
       setProExpiresAt(serverProExpiresAt);
       if (serverIsPro) {
-        if (serverProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, serverProExpiresAt);
-        localStorage.setItem("sb_pro_active", "true");
+        persistProState(data.email || userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
-        localStorage.removeItem(PRO_EXPIRES_KEY);
-        localStorage.removeItem(PRO_PIN_KEY);
-        localStorage.removeItem("sb_pro_active");
+        clearPersistedProState(data.email || userEmailRef.current);
       }
       setUserName(data.name);
       setUserEmail(data.email);
@@ -669,8 +718,7 @@ function AppInner() {
     socket.on("pro_activated", ({ taskCount, resetAt, proExpiresAt: exp }) => {
       setIsPro(true); setUserTaskCount(taskCount || 0); setUserResetDate(resetAt || null);
       setProExpiresAt(exp || null);
-      if (exp) localStorage.setItem(PRO_EXPIRES_KEY, exp);
-      localStorage.setItem("sb_pro_active", "true");
+      persistProState(userEmailRef.current, { isPro: true, proExpiresAt: exp || null });
       addToast("Pro activated!", "success");
     });
 
@@ -682,9 +730,7 @@ function AppInner() {
     socket.on("pro_deactivated", () => {
       setIsPro(false);
       setProExpiresAt(null);
-      localStorage.removeItem(PRO_EXPIRES_KEY);
-      localStorage.removeItem(PRO_PIN_KEY);
-      localStorage.removeItem("sb_pro_active");
+      clearPersistedProState(userEmailRef.current);
       addToast("Pro deactivated", "warn");
     });
 
@@ -709,12 +755,9 @@ function AppInner() {
       setIsPro(serverIsPro);
       setProExpiresAt(serverProExpiresAt);
       if (serverIsPro) {
-        if (serverProExpiresAt) localStorage.setItem(PRO_EXPIRES_KEY, serverProExpiresAt);
-        localStorage.setItem("sb_pro_active", "true");
+        persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
-        localStorage.removeItem(PRO_EXPIRES_KEY);
-        localStorage.removeItem(PRO_PIN_KEY);
-        localStorage.removeItem("sb_pro_active");
+        clearPersistedProState(userEmailRef.current);
       }
 
       localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify({
@@ -774,6 +817,10 @@ function AppInner() {
           setActionBanner(latest);
         }
       }
+    });
+
+    socket.on("history_cleared", () => {
+      setHistory([]);
     });
 
     socket.on("history_cleared", () => {
@@ -928,10 +975,6 @@ function AppInner() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(WORKSPACE_SESSION_KEY);
     sessionStorage.removeItem("sb_workspace_pin");
-    sessionStorage.removeItem(PRO_PIN_KEY);
-    sessionStorage.removeItem("sb_pro_active");
-    localStorage.removeItem(PRO_PIN_KEY);
-    localStorage.removeItem("sb_pro_active");
 
     if (workspaceName) {
       socket.emit("leave_room", { workspaceName, email: userEmail });
@@ -1063,10 +1106,9 @@ function AppInner() {
   const handleProActivated = useCallback((proPin) => {
     setIsPro(true);
     setShowProModal(false);
-    localStorage.setItem("sb_pro_active", "true");
-    localStorage.setItem(PRO_PIN_KEY, proPin);
+    persistProState(userEmailRef.current, { isPro: true, proPin, proExpiresAt: proExpiresAt || null });
     socket.emit("set_user_pro", { email: userEmail, proPin });
-  }, [userEmail]);
+  }, [userEmail, proExpiresAt]);
 
   const openUpgradeProModal = useCallback(() => {
     setShowProModal(true);
@@ -1168,9 +1210,7 @@ function AppInner() {
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                   <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pro Active</p>
                   <button onClick={() => {
-                    localStorage.removeItem(PRO_PIN_KEY);
-                    localStorage.removeItem(PRO_EXPIRES_KEY);
-                    localStorage.removeItem("sb_pro_active");
+                    clearPersistedProState(userEmail);
                     setIsPro(false);
                     setProExpiresAt(null);
                     socket.emit("deactivate_pro", { email: userEmail });
@@ -1568,10 +1608,11 @@ function AppInner() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {COLUMNS.map(col => {
               const colTasks = filteredTasks.filter(t => t.status === col.id);
+              const isProgressColumn = col.id === "in-progress";
               return (
                 <Column key={col.id} col={col}
                   tasks={colTasks}
-                  isLoading={boardHydrating && colTasks.length === 0}
+                  isLoading={boardHydrating && colTasks.length === 0 && !isProgressColumn}
                   onDelete={deleteTask} role={role} isPro={isPro} theme={theme}
                   onUpgrade={() => setShowProModal(true)}
                 />

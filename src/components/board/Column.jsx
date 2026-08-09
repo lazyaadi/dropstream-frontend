@@ -12,6 +12,7 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
   const thisCol = COLS.find(c => c.id === col.id) || col;
   const { setNodeRef, isOver } = useDroppable({ id: `column-${col.id}`, data: { columnId: col.id } });
   const hasActive = col.id === "in-progress" && tasks.length > 0;
+  const showEmptyState = !isLoading && tasks.length === 0 && col.id !== "in-progress";
 
   return (
     <div className="flex flex-col">
@@ -47,7 +48,7 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
               </div>
             ))
           )}
-          {!isLoading && tasks.length === 0 && (
+          {showEmptyState && (
             <div className={`flex flex-col items-center justify-center h-32 transition-opacity ${isOver ? "opacity-60" : "opacity-25"}`}>
               <Plus size={18} style={{ color: thisCol.color }} className="mb-2" />
               <p className={`text-[9px] uppercase tracking-widest font-black ${theme === "light" ? "text-gray-400" : "text-slate-500"}`}>Drop here</p>

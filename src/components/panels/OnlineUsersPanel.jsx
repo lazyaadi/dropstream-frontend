@@ -27,7 +27,7 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
   const onlineEmails = new Set(displayUsers.map(u => normEmail(u.email)));
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
+      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-120 w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
     >
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
@@ -76,15 +76,16 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
               const isSelf = safeCurrent && isSameOnlineUser(u, safeCurrent);
               const nameText = (u?.name || u?.displayName || "").trim() || (u?.email && u.email.includes("@") ? u.email.split("@")[0] : "Unknown");
               const displayEmail = u.email || (isSelf ? (safeCurrent?.email || null) : null);
+              const displayName = isSelf ? `${nameText} (You)` : nameText;
               return (
               <div key={normEmail(u.email) || normName(u.name) || i} className={`p-2 rounded-xl border flex items-center gap-2 ${T.historyBg} transition-all hover:${theme === "light" ? "bg-gray-100" : "bg-slate-700/50"}`}>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-medium
                   ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
-                >{nameText.charAt(0).toUpperCase()}</div>
+                >{displayName.charAt(0).toUpperCase()}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className={`text-xs font-medium truncate ${T.text}`}>{nameText}</p>
+                    <p className={`text-xs font-medium truncate ${T.text}`}>{displayName}</p>
                   </div>
                   {displayEmail && (
                     <p className={`text-[9px] truncate ${theme === "light" ? "text-slate-500" : "text-slate-300"}`}>{displayEmail}</p>
