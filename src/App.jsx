@@ -21,6 +21,7 @@ const SERVER_URL = import.meta.env?.VITE_SERVER_URL || DEFAULT_SERVER_URL;
 const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "";
 const SESSION_KEY = "sb_workspace_session";
 const WORKSPACE_SESSION_KEY = "sb_workspace_active";
+const LAST_AUTH_EMAIL_KEY = "sb_last_auth_email";
 const PRO_PIN_KEY = "sb_pro_pin";
 const PRO_EXPIRES_KEY = "sb_pro_expires_at";
 const PRO_ACTIVE_KEY = "sb_pro_active";
@@ -181,6 +182,23 @@ const getStoredSessionEmail = () => {
   }
 };
 
+const getStoredWorkspaceEmail = () => {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = localStorage.getItem(WORKSPACE_SESSION_KEY);
+    if (!raw) return "";
+    const parsed = JSON.parse(raw);
+    return normEmail(parsed?.userEmail || parsed?.email || "");
+  } catch {
+    return "";
+  }
+};
+
+const getStoredProfileEmail = () => {
+  if (typeof window === "undefined") return "";
+  return normEmail(getStoredSessionEmail() || getStoredWorkspaceEmail() || localStorage.getItem(LAST_AUTH_EMAIL_KEY) || "");
+};
+
 const getProStorageKey = (baseKey, email) => {
   const safeEmail = normEmail(email || getStoredSessionEmail());
   return safeEmail ? `${baseKey}:${safeEmail}` : "";
@@ -323,7 +341,7 @@ function AppInner() {
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
   const [workspaceStepLoading, setWorkspaceStepLoading] = useState(false);
-  const persistedProState = useMemo(() => getPersistedProState(getStoredSessionEmail()), []);
+  const persistedProState = useMemo(() => getPersistedProState(getStoredProfileEmail()), []);
   const [isPro, setIsPro]               = useState(() => persistedProState.isPro);
 
   const [isJoined, setIsJoined]       = useState(() => {
@@ -682,6 +700,7 @@ function AppInner() {
       setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
       const serverIsPro = !!data.isPro;
       const serverProExpiresAt = data.proExpiresAt || null;
+      localStorage.setItem(LAST_AUTH_EMAIL_KEY, normEmail(data.email || userEmailRef.current || userEmail || ""));
       setIsPro(prev => serverIsPro || prev);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
@@ -756,6 +775,7 @@ function AppInner() {
       finishBoardHydrationRef.current();
       setRole(r || "member"); setHistory(h || []); setMembers(m || []);
       setError(""); setWsErrorType(null);
+      localStorage.setItem(LAST_AUTH_EMAIL_KEY, normEmail(userEmailRef.current || ""));
       if (taskCount !== undefined) setUserTaskCount(taskCount);
       if (resetAt !== undefined) setUserResetDate(resetAt);
       const serverIsPro = !!sp;
