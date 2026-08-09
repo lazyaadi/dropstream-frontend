@@ -37,6 +37,17 @@
     @apply bg-slate-700 rounded-full;
   }
 
+  html.workspace-scrollbar-hide,
+  body.workspace-scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html.workspace-scrollbar-hide::-webkit-scrollbar,
+  body.workspace-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   .loop-bob {
     animation: bob 2.6s ease-in-out infinite;
   }

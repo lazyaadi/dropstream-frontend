@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/core";
 import { AnimatePresence } from "framer-motion";
 import {
-  Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield,
+  Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, Info, Shield,
   History, Users, LogOut, Trash2, Search, Lock,
 } from "lucide-react";
 
@@ -308,6 +308,7 @@ function AppInner() {
   }, []);
 
   const [userName, setUserName]       = useState("");
+  const [workspaceDisplayName, setWorkspaceDisplayName] = useState("");
   const [userEmail, setUserEmail]     = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [authReady, setAuthReady]     = useState(false);
@@ -321,6 +322,7 @@ function AppInner() {
   const [wsPin, setWsPin]               = useState("");
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
+  const [workspaceStepLoading, setWorkspaceStepLoading] = useState(false);
   const persistedProState = useMemo(() => getPersistedProState(getStoredSessionEmail()), []);
   const [isPro, setIsPro]               = useState(() => persistedProState.isPro);
 
@@ -439,6 +441,7 @@ function AppInner() {
     if (typeof window === "undefined") return undefined;
     if (!isJoined) return undefined;
 
+    document.documentElement.classList.add("workspace-scrollbar-hide");
     document.body.classList.add("workspace-scrollbar-hide");
 
     const noticeDelay = 3000;
@@ -462,6 +465,7 @@ function AppInner() {
       if (timerId) window.clearTimeout(timerId);
       window.removeEventListener("offline", triggerNotice);
       window.removeEventListener("online", hideNowHandler);
+      document.documentElement.classList.remove("workspace-scrollbar-hide");
       document.body.classList.remove("workspace-scrollbar-hide");
     };
   }, [isJoined]);
@@ -533,6 +537,7 @@ function AppInner() {
           setWorkspaceName(s.workspaceName);
           setUserEmail(s.userEmail);
           setUserName(s.userName);
+          setWorkspaceDisplayName(s.displayName || s.userName || "");
           if (s.projectName) setProjectName(s.projectName);
           if (s.role) setRole(s.role);
           if (s.tasks) setTasks(s.tasks);
@@ -569,8 +574,8 @@ function AppInner() {
                   serverIsPro,
                   serverExpiresAt,
                 });
-                setIsPro(serverIsPro);
-                setProExpiresAt(serverExpiresAt);
+                setIsPro(prev => serverIsPro || prev);
+                setProExpiresAt(prev => serverExpiresAt || prev || null);
                 if (serverIsPro) {
                     persistProState(s.userEmail, { isPro: true, proExpiresAt: serverExpiresAt });
                 } else {
@@ -677,10 +682,10 @@ function AppInner() {
       setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
       const serverIsPro = !!data.isPro;
       const serverProExpiresAt = data.proExpiresAt || null;
-      setIsPro(serverIsPro);
+      setIsPro(prev => serverIsPro || prev);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
-      setProExpiresAt(serverProExpiresAt);
+      setProExpiresAt(prev => serverProExpiresAt || prev || null);
       if (serverIsPro) {
         persistProState(data.email || userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
@@ -755,8 +760,8 @@ function AppInner() {
       if (resetAt !== undefined) setUserResetDate(resetAt);
       const serverIsPro = !!sp;
       const serverProExpiresAt = exp || null;
-      setIsPro(serverIsPro);
-      setProExpiresAt(serverProExpiresAt);
+      setIsPro(prev => serverIsPro || prev);
+      setProExpiresAt(prev => serverProExpiresAt || prev || null);
       if (serverIsPro) {
         persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
@@ -947,6 +952,15 @@ function AppInner() {
     setAuthError(""); setAuthMethod("password"); setAuthStep("email");
   }, [userName]);
 
+  const openWorkspaceStep = useCallback((nextView) => {
+    setWorkspaceStepLoading(true);
+    setError("");
+    setTimeout(() => {
+      setView(nextView);
+      setWorkspaceStepLoading(false);
+    }, 450);
+  }, []);
+
   const handleAuth = useCallback(() => {
     const emailErr = validateEmail(userEmail);
     if (emailErr) return setAuthError(emailErr);
@@ -965,7 +979,9 @@ function AppInner() {
     if (isCreating && !projectName.trim()) return setError("Project title is required.");
     const customName = userName.trim();
     localStorage.setItem("sb_user_name", customName);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userName: customName, userEmail, workspaceName, projectName }));
+    setWorkspaceDisplayName(customName);
+    setWorkspaceStepLoading(true);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userName: customName, displayName: customName, userEmail, workspaceName, projectName }));
     setBoardHydrating(true);
     socket.emit("join_workspace", {
       workspaceName: workspaceName.toLowerCase(),
@@ -1054,12 +1070,14 @@ function AppInner() {
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "move_task", taskTitle: task.title, targetStatus: colLabel } });
   };
 
+  const displayName = workspaceDisplayName || userName;
+
   const addTask = useCallback((taskData) => {
     const { title, description, priority, dueDate, image } = taskData;
     const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     const taskId = `task-${Date.now()}`;
-    const safeCreatorName = userName;
+    const safeCreatorName = displayName;
     const creatorInitials = safeCreatorName
       .split(" ")
       .filter(Boolean)
@@ -1089,7 +1107,7 @@ function AppInner() {
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
     addToast("Task created", "success");
-  }, [tasks, isPro, userTaskCount, userName, role, workspaceName, addToast]);
+  }, [tasks, isPro, userTaskCount, displayName, role, workspaceName, addToast]);
 
   const deleteTask = useCallback((taskId) => {
     const task = tasks.find(t => t.id === taskId);
@@ -1126,7 +1144,8 @@ function AppInner() {
   const done     = tasks.filter(t => t.status === "done").length;
   const total    = tasks.length;
   const progress = total ? Math.round((done / total) * 100) : 0;
-  const otherTypers = typers.filter(t => t.name !== userName);
+  const displayName = workspaceDisplayName || userName;
+  const otherTypers = typers.filter(t => t.name !== displayName);
   const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
   const proExpiryLabel = useMemo(() => {
     if (!proExpiresAt) return "";
@@ -1306,6 +1325,11 @@ function AppInner() {
                     <p className="text-[10px] text-red-400 font-bold">{authError}</p>
                   </div>
                 )}
+                <button onClick={() => { setAuthStep("name"); setAuthError(""); setAuthMethod("password"); }}
+                  className={`inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-lg border transition cursor-pointer ${theme === "light" ? "text-gray-600 border-gray-200 bg-gray-50 hover:bg-gray-100" : "text-slate-300 border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}>
+                  <ArrowLeft size={12} />
+                  Back
+                </button>
                 <button onClick={handleAuth} disabled={authLoading}
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30">
                   {authLoading ? "Loading…" : "Login"}
@@ -1339,11 +1363,11 @@ function AppInner() {
                     </div>
 
                     <div className="flex gap-3 mt-6">
-                      <button onClick={() => setView("create")}
+                      <button onClick={() => openWorkspaceStep("create")}
                         className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm bg-linear-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
                         <Plus size={18}/><span>New Workspace</span>
                       </button>
-                      <button onClick={() => setView("join")}
+                      <button onClick={() => openWorkspaceStep("join")}
                         className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl font-semibold text-sm transition-all active:scale-95 cursor-pointer backdrop-blur-sm border-2
                           ${theme === "light" ? "bg-white border-blue-600 text-blue-600 hover:bg-blue-50" : "bg-slate-800/50 border-blue-500 text-blue-300 hover:bg-slate-700/60"}`}>
                         <ChevronRight size={18}/><span>Join Workspace</span>
@@ -1377,6 +1401,17 @@ function AppInner() {
                     </button>
                   </div>
                 ) : (
+                  workspaceStepLoading ? (
+                    <div className="flex items-center justify-center py-10">
+                      <div className="rounded-3xl border px-5 py-6 text-center shadow-xl backdrop-blur-xl w-full max-w-sm">
+                        <div className="mx-auto w-12 h-12 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-3">
+                          <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}>Preparing workspace</p>
+                        <p className={`text-sm mt-2 ${T.text}`}>Loading the workspace form…</p>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="space-y-5">
                     <div className="mb-5">
                       <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-3.5 block`}>Workspace Handle</label>
@@ -1408,9 +1443,13 @@ function AppInner() {
                       className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/40 mt-2">
                       {view === "create" ? "Initialize Workspace" : "Connect to Workspace"}
                     </button>
-                    <button onClick={() => { setView("start"); setError(""); setWsPin(""); setWorkspaceName(""); }}
-                      className={`w-full text-[10px] ${T.label} font-black uppercase hover:text-blue-500 cursor-pointer transition py-1`}>← Back</button>
+                    <button onClick={() => { setWorkspaceStepLoading(false); setView("start"); setError(""); setWsPin(""); setWorkspaceName(""); }}
+                      className={`inline-flex items-center justify-center gap-2 w-full text-[10px] ${T.label} font-black uppercase tracking-widest px-3 py-2 rounded-lg border transition cursor-pointer ${theme === "light" ? "border-gray-200 bg-gray-50 hover:bg-gray-100" : "border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}>
+                      <ArrowLeft size={12} />
+                      Back
+                    </button>
                   </div>
+                  )
                 )}
               </div>
             )}
@@ -1448,7 +1487,7 @@ function AppInner() {
             serverUrl={SERVER_URL}
             context={{
               workspaceName,
-              userName,
+              userName: displayName,
               userEmail,
               role,
             }}
@@ -1467,7 +1506,7 @@ function AppInner() {
             onClose={() => setShowOnlineUsers(false)}
             onUpgrade={openUpgradeProModal}
             theme={theme}
-            currentUser={{ name: userName, email: userEmail }}
+            currentUser={{ name: displayName, email: userEmail }}
           />
         )}
         {otherTypers.length > 0 && <TypingIndicator key="typing-indicator" typers={otherTypers} />}
@@ -1507,7 +1546,7 @@ function AppInner() {
         isPro={isPro}
         proExpiryLabel={proExpiryLabel}
         onlineUsers={onlineUsers}
-        userName={userName}
+        userName={displayName}
         userEmail={userEmail}
         showHistory={showHistory}
         setShowHistory={setShowHistory}
@@ -1528,7 +1567,7 @@ function AppInner() {
         <MobileMenu
           theme={theme}
           toggleTheme={toggleTheme}
-          userName={userName}
+          userName={displayName}
           role={role}
           isPro={isPro}
           proExpiresAt={proExpiresAt}
