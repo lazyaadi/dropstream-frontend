@@ -484,14 +484,31 @@ function AppInner() {
 
           (async () => {
             try {
+              console.log("PRO CLIENT HYDRATE START:", {
+                email: s.userEmail,
+                sessionIsPro: s.isPro,
+                sessionProExpiresAt: s.proExpiresAt || null,
+              });
               const response = await fetch(`${SERVER_URL}/api/user/profile?email=${encodeURIComponent(s.userEmail)}`, {
                 credentials: "include",
+              });
+              console.log("PRO CLIENT HYDRATE RESPONSE RECEIVED:", {
+                ok: response.ok,
+                status: response.status,
               });
               if (response.ok) {
                 const result = await response.json();
                 const profile = result?.profile || null;
+                console.log("PRO CLIENT HYDRATE PROFILE:", {
+                  isPro: profile?.isPro,
+                  proExpiresAt: profile?.proExpiresAt || null,
+                });
                 const serverIsPro = !!profile?.isPro;
                 const serverExpiresAt = profile?.proExpiresAt || null;
+                console.log("PRO CLIENT HYDRATE APPLY:", {
+                  serverIsPro,
+                  serverExpiresAt,
+                });
                 setIsPro(serverIsPro);
                 setProExpiresAt(serverExpiresAt);
                 if (serverIsPro) {
