@@ -1144,7 +1144,6 @@ function AppInner() {
   const done     = tasks.filter(t => t.status === "done").length;
   const total    = tasks.length;
   const progress = total ? Math.round((done / total) * 100) : 0;
-  const displayName = workspaceDisplayName || userName;
   const otherTypers = typers.filter(t => t.name !== displayName);
   const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
   const proExpiryLabel = useMemo(() => {
