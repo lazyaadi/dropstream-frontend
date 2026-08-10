@@ -272,7 +272,7 @@ import ParticleBg from "./components/effects/ParticleBg.jsx";
 import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
 import LiveActionCard from "./components/ui/LiveActionCard.jsx";
-import { playUserChime } from "./lib/sound";
+// audio utilities removed
 import TaskCard from "./components/board/TaskCard.jsx";
 import Column from "./components/board/Column.jsx";
 import AddTaskModal from "./components/modals/AddTaskModal.jsx";
@@ -359,9 +359,6 @@ function AppInner() {
   const [userTaskCount, setUserTaskCount] = useState(0);
   const [userResetDate, setUserResetDate] = useState(null);
   const [proExpiresAt, setProExpiresAt]   = useState(() => persistedProState.proExpiresAt);
-  const [isMuted, setIsMuted] = useState(() => {
-    try { return localStorage.getItem('sb_sound_muted') === 'true'; } catch { return false; }
-  });
 
   const [showAdd, setShowAdd]               = useState(false);
   const [showHistory, setShowHistory]       = useState(false);
@@ -378,9 +375,8 @@ function AppInner() {
   const [syncPulse, setSyncPulse]           = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem('sb_sound_muted', isMuted ? 'true' : 'false'); } catch {}
     console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
-  }, [isMuted, isPro]);
+  }, [isPro]);
 
   const validMembers = useMemo(() => {
     return (Array.isArray(members) ? members : []).filter((member) => {
@@ -1145,7 +1141,6 @@ function AppInner() {
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "move_task", taskTitle: task.title, targetStatus: colLabel } });
     setActionBanner({ action: "TASK MOVED" });
-    try { playUserChime(isMuted); } catch {}
   };
 
   const displayName = workspaceDisplayName || userName;
@@ -1185,7 +1180,6 @@ function AppInner() {
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
     setActionBanner({ action: "TASK CREATED" });
-    try { playUserChime(isMuted); } catch {}
   }, [tasks, isPro, userTaskCount, displayName, role, workspaceName, addToast]);
 
   const deleteTask = useCallback((taskId) => {
@@ -1194,7 +1188,6 @@ function AppInner() {
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "delete_task", taskTitle: task?.title || "" } });
     setActionBanner({ action: "TASK DELETED" });
-    try { playUserChime(isMuted); } catch {}
   }, [tasks, workspaceName, addToast]);
 
   const tryOpenAdd = useCallback(() => {
@@ -1641,8 +1634,6 @@ function AppInner() {
         progress={progress}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
-        isMuted={isMuted}
-        setIsMuted={setIsMuted}
       />
 
       {showMobileMenu && (

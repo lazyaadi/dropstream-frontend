@@ -56,4 +56,4 @@ export const validatePin = (p) => {
   if (p.trim().length < 6) return "PIN must be 6 digits.";
   return null;
 };
-// legacy audio helpers removed — use `playUserChime(isMuted)` from `src/lib/sound.js`
+// legacy audio helpers removed

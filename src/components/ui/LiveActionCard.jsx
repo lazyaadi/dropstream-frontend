@@ -15,8 +15,6 @@ export default function LiveActionCard({ entry, onDismiss, theme }) {
   const targetStatus = entry.targetStatus || entry.target || null;
 
   const renderDetail = () => {
-    if (action.includes("joined")) return (<>{" "}<strong>{user}</strong> joined the workspace.</>);
-    if (action.includes("left")) return (<>{" "}<strong>{user}</strong> left the workspace.</>);
     if (action.includes("moved")) return (<>{" "}<strong>{user}</strong> moved task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>{targetStatus ? ` to ${targetStatus}` : ""}.</>);
     if (action.includes("created") || action.includes("added")) return (<>{" "}<strong>{user}</strong> created task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>.</>);
     if (action.includes("deleted") || action.includes("removed")) return (<>{" "}<strong>{user}</strong> deleted task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>.</>);

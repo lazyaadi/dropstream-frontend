@@ -1,5 +1,4 @@
 import React from "react";
-import { playUserChime } from "../../lib/sound";
 import { Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield, History, Users, LogOut, Trash2, Search, Lock, Menu, X } from "lucide-react";
 import OnlineAvatars from "./OnlineAvatars";
 
@@ -27,8 +26,7 @@ const Navbar = ({
   progress,
   showMobileMenu,
   setShowMobileMenu,
-  isMuted,
-  setIsMuted,
+  
 }) => {
   return (
     <nav className={`relative z-40 ${T.nav} backdrop-blur-xl sticky top-0 shadow-lg`}>
@@ -90,16 +88,7 @@ const Navbar = ({
               title="Toggle theme">
               {theme === "dark" ? <Sun size={14}/> : <Moon size={14}/>}
             </button>
-            <button onClick={() => { const nv = !isMuted; try { localStorage.setItem('sb_sound_muted', nv ? 'true' : 'false'); } catch {} ; setIsMuted(nv); }}
-              className={`flex items-center justify-center p-2 rounded-lg border transition cursor-pointer ml-2 ${theme === "dark" ? "bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:border-slate-600 hover:bg-slate-800/60" : "bg-gray-100 border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-200"}`}
-              title={isMuted ? "Unmute sounds" : "Mute sounds"}>
-              <span className="text-sm">{isMuted ? '🔇' : '🔊'}</span>
-            </button>
-            <button onClick={() => { console.debug('[sound] manual test button clicked'); try { playUserChime(false); } catch (e) { console.warn(e); } }}
-              className="flex items-center justify-center p-2 rounded-lg border transition cursor-pointer ml-2 bg-blue-50 hover:bg-blue-100 text-blue-600"
-              title="Test sound">
-              <span className="text-sm">🔔</span>
-            </button>
+            
             <div className={`flex items-center gap-2 pl-3 border-l ${T.divider}`}>
               <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-black text-white shrink-0">
                 {userName.charAt(0).toUpperCase()}
