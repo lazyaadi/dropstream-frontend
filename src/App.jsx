@@ -273,7 +273,7 @@ import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
 import LiveActionCard from "./components/ui/LiveActionCard.jsx";
 import { playChime } from "./lib/utils";
-import { unlockAudio } from "./lib/utils";
+import { initAudioUnlocker, playNotificationChime } from "./lib/sound";
 import TaskCard from "./components/board/TaskCard.jsx";
 import Column from "./components/board/Column.jsx";
 import AddTaskModal from "./components/modals/AddTaskModal.jsx";
@@ -376,34 +376,10 @@ function AppInner() {
   const [syncPulse, setSyncPulse]           = useState(false);
 
   useEffect(() => {
-    // Attach a one-time user gesture listener to unlock mobile audio contexts
-    if (typeof document !== "undefined") {
-      // Preload a lightweight chime file to reduce decode latency
-      const audioPath = "/sounds/chime.mp3";
-      const notificationAudio = new Audio(audioPath);
-      notificationAudio.preload = "auto";
-      try { window.__syncboard_notification_audio = notificationAudio; } catch (err) {}
-
-      const onFirst = async () => {
-        try { await unlockAudio(); } catch {}
-        try {
-          try { notificationAudio.currentTime = 0; } catch {}
-          const p = notificationAudio.play();
-          if (p && p.then) {
-            p.then(() => { try { notificationAudio.pause(); notificationAudio.currentTime = 0; } catch {} });
-          }
-        } catch (err) {}
-        document.removeEventListener("click", onFirst);
-        document.removeEventListener("touchstart", onFirst);
-        document.removeEventListener("keydown", onFirst);
-      };
-      document.addEventListener("click", onFirst, { once: true });
-      document.addEventListener("touchstart", onFirst, { once: true });
-      document.addEventListener("keydown", onFirst, { once: true });
-    }
-
+    // Initialize global audio unlocker once on mount
+    try { initAudioUnlocker(); } catch (err) {}
     console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
-  }, [isPro]);
+  }, []);
 
   const validMembers = useMemo(() => {
     return (Array.isArray(members) ? members : []).filter((member) => {
@@ -580,19 +556,7 @@ function AppInner() {
         if (!self) setLiveAction({ ...item, __uid: Date.now() });
         try {
           if (!self) {
-            // Attempt to play preloaded audio first, fall back to WebAudio chime
-            try {
-              const audio = (typeof window !== 'undefined') ? window.__syncboard_notification_audio : null;
-              if (audio) {
-                try { audio.currentTime = 0; } catch {}
-                const p = audio.play();
-                if (p && p.then) await p.catch(() => playChime());
-              } else {
-                await playChime();
-              }
-            } catch (e) {
-              await playChime();
-            }
+            try { playNotificationChime(); } catch (e) { try { await playChime(); } catch {} }
           }
         } catch {}
         try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
