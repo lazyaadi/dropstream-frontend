@@ -811,12 +811,12 @@ function AppInner() {
       if (h) setHistory(h);
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
       if (h && h[0]) {
-        setActionBanner(h[0]);
-        const a = h[0].action || "";
-        if (a.includes("In Progress") || a.includes("Done")) {
-          addToast(`${h[0].userName}: ${h[0].action}`, "pro");
-        }
+        const action = (h[0].action || "").toLowerCase();
+        if (action.includes("created") || action.includes("added")) setActionBanner({ action: "TASK CREATED" });
+        else if (action.includes("moved")) setActionBanner({ action: "TASK MOVED" });
+        else if (action.includes("deleted") || action.includes("removed")) setActionBanner({ action: "TASK DELETED" });
       } else {
+        // keep small sync toast
         addToast("Board synced", "sync");
       }
     });
@@ -838,12 +838,11 @@ function AppInner() {
     socket.on("history_update", (h) => {
       setHistory(h || []);
       const latest = h && h[0];
-      const action = latest?.action || "";
-      const isPresenceEvent = action.includes("joined") || action.includes("left");
-      if (isPresenceEvent && latest?.userName && latest.userName !== userNameRef.current) {
-        // presence events can optionally show banner for others
-        setActionBanner(latest);
-      }
+      const action = (latest?.action || "").toLowerCase();
+      if (!latest) return;
+      if (action.includes("created") || action.includes("added")) setActionBanner({ action: "TASK CREATED" });
+      else if (action.includes("moved")) setActionBanner({ action: "TASK MOVED" });
+      else if (action.includes("deleted") || action.includes("removed")) setActionBanner({ action: "TASK DELETED" });
     });
 
     socket.on("history_cleared", () => {
@@ -1087,6 +1086,7 @@ function AppInner() {
     );
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "move_task", taskTitle: task.title, targetStatus: colLabel } });
+    setActionBanner({ action: "TASK MOVED" });
   };
 
   const displayName = workspaceDisplayName || userName;
@@ -1125,7 +1125,7 @@ function AppInner() {
     setTasks(updated);
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
-    addToast("Task created", "success");
+    setActionBanner({ action: "TASK CREATED" });
   }, [tasks, isPro, userTaskCount, displayName, role, workspaceName, addToast]);
 
   const deleteTask = useCallback((taskId) => {
@@ -1133,7 +1133,7 @@ function AppInner() {
     const updated = tasks.filter(t => t.id !== taskId);
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "delete_task", taskTitle: task?.title || "" } });
-    addToast("Task deleted", "delete");
+    setActionBanner({ action: "TASK DELETED" });
   }, [tasks, workspaceName, addToast]);
 
   const tryOpenAdd = useCallback(() => {

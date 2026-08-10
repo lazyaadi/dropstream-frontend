@@ -23,17 +23,22 @@ export default function ActionBanner({ entry, onDismiss, theme }) {
     return          { icon: <Bell size={16}/>,              color: "text-purple-400",bg: "bg-purple-500/10",border: "border-purple-500/30" };
   })();
 
-  // Always render a compact pill matching the requested UI
-  const label = isCreated ? "TASK CREATED" : (isDeleted ? "TASK DELETED" : (isMoved ? "TASK MOVED" : "LIVE ACTION"));
-  const pillClass = isCreated ? "bg-blue-600 text-white" : (isDeleted ? "bg-[#13141a] text-pink-300 border border-[#2b2b33]" : (isMoved ? "bg-amber-500 text-slate-900" : "bg-purple-600 text-white"));
+  // Only show for create/move/delete actions; otherwise render nothing
+  let label = null;
+  if (isCreated) label = "TASK CREATED";
+  else if (isDeleted) label = "TASK DELETED";
+  else if (isMoved) label = "TASK MOVED";
+  if (!label) return null;
+
+  const pillClass = isCreated ? "bg-[#0f1724] text-pink-100 border border-[#2b2b33]" : (isDeleted ? "bg-[#0f1724] text-pink-100 border border-[#2b2b33]" : "bg-[#0f1724] text-amber-300 border border-[#2b2b33]");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+      initial={{ opacity: 0, y: 8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      exit={{ opacity: 0, y: 8, scale: 0.98 }}
       transition={{ duration: 0.18 }}
-      className={`fixed top-12 left-1/2 -translate-x-1/2 z-[150] rounded-full px-5 py-2 shadow-lg ${pillClass}`}
+      className={`fixed bottom-6 left-6 z-[150] rounded-full px-5 py-2 shadow-lg ${pillClass}`}
       style={{ pointerEvents: 'auto' }}
     >
       <div className="font-black text-sm uppercase tracking-widest text-center">{label}</div>
