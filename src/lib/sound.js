@@ -5,11 +5,16 @@ export const playUserChime = (isMuted) => {
   if (typeof window === 'undefined') return;
   if (isMuted) return;
   try {
+    console.debug('[sound] playUserChime() attempt', { AUDIO_PATH, isMuted });
     const chime = new Audio(AUDIO_PATH);
     try { chime.currentTime = 0; } catch {}
     chime.volume = 0.8;
-    chime.play().catch(() => {});
+    const p = chime.play();
+    if (p && p.then) {
+      p.then(() => console.debug('[sound] chime.play() resolved'))
+       .catch((err) => console.warn('[sound] chime.play() rejected', err));
+    }
   } catch (e) {
-    // swallow playback errors
+    console.warn('[sound] playUserChime() error', e);
   }
 };
