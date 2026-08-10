@@ -83,3 +83,37 @@ export const playNotifSound = () => {
     osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
   } catch {}
 };
+
+// Play a short chime for live-action events. Uses a shared AudioContext and
+// resumes on first user gesture to work on mobile browsers.
+export const playChime = (() => {
+  let ctx = null;
+  let resumed = false;
+
+  const ensure = async () => {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!resumed && ctx.state === 'suspended') {
+      const resumeOnce = () => { try { ctx.resume(); } catch {} document.removeEventListener('click', resumeOnce); document.removeEventListener('touchstart', resumeOnce); resumed = true; };
+      document.addEventListener('click', resumeOnce, { once: true });
+      document.addEventListener('touchstart', resumeOnce, { once: true });
+    }
+    return ctx;
+  };
+
+  return async () => {
+    try {
+      const c = await ensure();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(1000, c.currentTime);
+      o.frequency.setValueAtTime(1200, c.currentTime + 0.06);
+      g.gain.setValueAtTime(0.0001, c.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.18);
+      o.connect(g); g.connect(c.destination);
+      o.start(c.currentTime + 0.001);
+      o.stop(c.currentTime + 0.2);
+    } catch {}
+  };
+})();

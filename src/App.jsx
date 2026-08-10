@@ -271,6 +271,8 @@ const getPersistedProState = (email) => {
 import ParticleBg from "./components/effects/ParticleBg.jsx";
 import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
+import LiveActionCard from "./components/ui/LiveActionCard.jsx";
+import { playChime } from "./lib/utils";
 import TaskCard from "./components/board/TaskCard.jsx";
 import Column from "./components/board/Column.jsx";
 import AddTaskModal from "./components/modals/AddTaskModal.jsx";
@@ -496,6 +498,7 @@ function AppInner() {
     }, 380);
   };
   const [actionBanner, setActionBanner]     = useState(null);
+  const [liveAction, setLiveAction] = useState(null);
   const [wsErrorType, setWsErrorType]       = useState(null);
   const [wsErrorName, setWsErrorName]       = useState("");
 
@@ -811,10 +814,21 @@ function AppInner() {
       if (h) setHistory(h);
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
       if (h && h[0]) {
-        const action = (h[0].action || "").toLowerCase();
-        if (action.includes("created") || action.includes("added")) setActionBanner({ action: "TASK CREATED" });
-        else if (action.includes("moved")) setActionBanner({ action: "TASK MOVED" });
-        else if (action.includes("deleted") || action.includes("removed")) setActionBanner({ action: "TASK DELETED" });
+        const latest = h[0];
+        const action = (latest.action || "").toLowerCase();
+        // show both the simple pill and the detailed live action card
+        if (action.includes("created") || action.includes("added")) {
+          setActionBanner({ action: "TASK CREATED" });
+          setLiveAction(latest);
+        } else if (action.includes("moved")) {
+          setActionBanner({ action: "TASK MOVED" });
+          setLiveAction(latest);
+        } else if (action.includes("deleted") || action.includes("removed")) {
+          setActionBanner({ action: "TASK DELETED" });
+          setLiveAction(latest);
+        }
+        // play chime for incoming event
+        try { playChime(); } catch {}
       } else {
         // keep small sync toast
         addToast("Board synced", "sync");
@@ -838,11 +852,12 @@ function AppInner() {
     socket.on("history_update", (h) => {
       setHistory(h || []);
       const latest = h && h[0];
-      const action = (latest?.action || "").toLowerCase();
       if (!latest) return;
-      if (action.includes("created") || action.includes("added")) setActionBanner({ action: "TASK CREATED" });
-      else if (action.includes("moved")) setActionBanner({ action: "TASK MOVED" });
-      else if (action.includes("deleted") || action.includes("removed")) setActionBanner({ action: "TASK DELETED" });
+      const action = (latest.action || "").toLowerCase();
+      if (action.includes("created") || action.includes("added")) { setActionBanner({ action: "TASK CREATED" }); setLiveAction(latest); }
+      else if (action.includes("moved")) { setActionBanner({ action: "TASK MOVED" }); setLiveAction(latest); }
+      else if (action.includes("deleted") || action.includes("removed")) { setActionBanner({ action: "TASK DELETED" }); setLiveAction(latest); }
+      try { playChime(); } catch {}
     });
 
     socket.on("history_cleared", () => {
@@ -1495,6 +1510,7 @@ function AppInner() {
 
       <AnimatePresence>
         {actionBanner && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
+        {liveAction && <LiveActionCard key="live-action" entry={liveAction} onDismiss={() => setLiveAction(null)} theme={theme} />}
         {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => setError("")} />}
         {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
         {showContact && (
