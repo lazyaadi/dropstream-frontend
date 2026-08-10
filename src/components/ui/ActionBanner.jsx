@@ -7,7 +7,7 @@ export default function ActionBanner({ entry, onDismiss, theme }) {
   const T = theme === "light" ? TL : TD;
   const [isMobile, setIsMobile] = React.useState(false);
   useEffect(() => {
-    const t = setTimeout(onDismiss, 2000);
+    const t = setTimeout(onDismiss, 3000);
     return () => clearTimeout(t);
   }, [entry, onDismiss]);
 

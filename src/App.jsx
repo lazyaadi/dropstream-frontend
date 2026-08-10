@@ -518,12 +518,41 @@ function AppInner() {
   const authMethodRef = useRef(authMethod);
   const googleButtonRef = useRef(null);
   const pendingGoogleAuthTokenRef = useRef("");
+  // Notification queue to serialize live-action banners
+  const notificationQueueRef = useRef([]);
+  const notificationProcessingRef = useRef(false);
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
   useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
   useEffect(() => { wsPinRef.current = wsPin; }, [wsPin]);
   useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
+
+  // Enqueue a notification (entry) for sequential display
+  const enqueueNotification = (entry, isSelf = false) => {
+    notificationQueueRef.current.push({ entry, isSelf });
+    if (notificationProcessingRef.current) return;
+    notificationProcessingRef.current = true;
+
+    (async function processQueue() {
+      while (notificationQueueRef.current.length) {
+        const { entry: item, isSelf: self } = notificationQueueRef.current.shift();
+        const act = (item.action || "").toLowerCase();
+        if (act.includes("created") || act.includes("added")) setActionBanner({ action: "TASK CREATED" });
+        else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
+        else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
+        if (!self) setLiveAction(item);
+        try { if (!self) await playChime(); } catch {}
+        // display duration
+        await new Promise(r => setTimeout(r, 3000));
+        setLiveAction(null);
+        setActionBanner(null);
+        // small gap to allow exit animation
+        await new Promise(r => setTimeout(r, 160));
+      }
+      notificationProcessingRef.current = false;
+    })();
+  };
   useEffect(() => {
     if (!authReady || !userEmail) return;
     const persisted = getPersistedProState(userEmail);
@@ -823,23 +852,10 @@ function AppInner() {
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
       if (h && h[0]) {
         const latest = h[0];
-        const action = (latest.action || "").toLowerCase();
         const latestUser = (latest.userName || "").toString().trim().toLowerCase();
         const me = (userNameRef.current || "").toString().trim().toLowerCase();
         const isSelf = latestUser && me && latestUser === me;
-        // show both the simple pill and the detailed live action card (only for others)
-        if (action.includes("created") || action.includes("added")) {
-          setActionBanner({ action: "TASK CREATED" });
-          if (!isSelf) setLiveAction(latest);
-        } else if (action.includes("moved")) {
-          setActionBanner({ action: "TASK MOVED" });
-          if (!isSelf) setLiveAction(latest);
-        } else if (action.includes("deleted") || action.includes("removed")) {
-          setActionBanner({ action: "TASK DELETED" });
-          if (!isSelf) setLiveAction(latest);
-        }
-        // play chime for incoming event (only for others)
-        try { if (!isSelf) playChime(); } catch {}
+        enqueueNotification(latest, isSelf);
       } else {
         // keep small sync toast
         addToast("Board synced", "sync");
@@ -864,14 +880,10 @@ function AppInner() {
       setHistory(h || []);
       const latest = h && h[0];
       if (!latest) return;
-      const action = (latest.action || "").toLowerCase();
       const latestUser = (latest.userName || "").toString().trim().toLowerCase();
       const me = (userNameRef.current || "").toString().trim().toLowerCase();
       const isSelf = latestUser && me && latestUser === me;
-      if (action.includes("created") || action.includes("added")) { setActionBanner({ action: "TASK CREATED" }); if (!isSelf) setLiveAction(latest); }
-      else if (action.includes("moved")) { setActionBanner({ action: "TASK MOVED" }); if (!isSelf) setLiveAction(latest); }
-      else if (action.includes("deleted") || action.includes("removed")) { setActionBanner({ action: "TASK DELETED" }); if (!isSelf) setLiveAction(latest); }
-      try { if (!isSelf) playChime(); } catch {}
+      enqueueNotification(latest, isSelf);
     });
 
     socket.on("history_cleared", () => {
