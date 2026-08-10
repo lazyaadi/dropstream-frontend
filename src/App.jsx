@@ -558,7 +558,7 @@ function AppInner() {
         if (act.includes("created") || act.includes("added")) setActionBanner({ action: "TASK CREATED" });
         else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
         else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
-        if (!self) setLiveAction(item);
+        if (!self) setLiveAction({ ...item, __uid: Date.now() });
         try { if (!self) await playChime(); } catch {}
         try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
         // display duration
@@ -1554,7 +1554,7 @@ function AppInner() {
 
       <AnimatePresence>
         {actionBanner && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
-        {liveAction && <LiveActionCard key="live-action" entry={liveAction} onDismiss={() => setLiveAction(null)} theme={theme} />}
+        {liveAction && <LiveActionCard key={liveAction.__uid || liveAction.id || liveAction.timestamp || liveAction.taskTitle} entry={liveAction} onDismiss={() => setLiveAction(null)} theme={theme} />}
         {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => setError("")} />}
         {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
         {showContact && (

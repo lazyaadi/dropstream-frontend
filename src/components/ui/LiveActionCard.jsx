@@ -23,8 +23,11 @@ export default function LiveActionCard({ entry, onDismiss, theme }) {
     return (<>{" "}<strong>{user}</strong> {entry.action}</>);
   };
 
+  const uid = entry?.__uid || entry?.id || entry?.timestamp || entry?.ts || `${entry?.action || ''}-${entry?.taskTitle || ''}-${entry?.userName || ''}`;
+
   return (
     <motion.div
+      key={uid}
       initial={{ opacity: 0, x: 30, scale: 0.98 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 30, scale: 0.98 }}
