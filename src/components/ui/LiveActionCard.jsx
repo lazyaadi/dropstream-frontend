@@ -4,7 +4,7 @@ import { X, Bell } from "lucide-react";
 
 export default function LiveActionCard({ entry, onDismiss, theme }) {
   useEffect(() => {
-    const t = setTimeout(onDismiss, 5000);
+    const t = setTimeout(onDismiss, 2000);
     return () => clearTimeout(t);
   }, [entry, onDismiss]);
 
@@ -45,7 +45,7 @@ export default function LiveActionCard({ entry, onDismiss, theme }) {
         <button onClick={onDismiss} className={`text-slate-400 hover:text-red-500 transition cursor-pointer`}><X size={14} /></button>
       </div>
       <div className="h-0.5 bg-blue-500/30 mt-3 rounded-full overflow-hidden">
-        <motion.div className="h-full bg-blue-500" initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: 5, ease: "linear" }} />
+        <motion.div className="h-full bg-blue-500" initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: 2, ease: "linear" }} />
       </div>
     </motion.div>
   );
