@@ -521,6 +521,7 @@ function AppInner() {
   // Notification queue to serialize live-action banners
   const notificationQueueRef = useRef([]);
   const notificationProcessingRef = useRef(false);
+  const recentNotifSignaturesRef = useRef([]); // { sig, ts }
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
@@ -530,19 +531,36 @@ function AppInner() {
 
   // Enqueue a notification (entry) for sequential display
   const enqueueNotification = (entry, isSelf = false) => {
-    notificationQueueRef.current.push({ entry, isSelf });
+    if (isSelf) return; // do not enqueue notifications originated by this client
+    try {
+      const sig = `${(entry.action||"").toString().trim().toLowerCase()}|${(entry.taskTitle||"").toString().trim()}|${(entry.userName||"").toString().trim()}`;
+      const now = Date.now();
+      // prune old signatures
+      recentNotifSignaturesRef.current = recentNotifSignaturesRef.current.filter(x => now - x.ts < 1000);
+      const dupInRecent = recentNotifSignaturesRef.current.some(x => x.sig === sig && now - x.ts < 500);
+      const dupInQueue = notificationQueueRef.current.some(q => {
+        const e = q.entry || {};
+        const qs = `${(e.action||"").toString().trim().toLowerCase()}|${(e.taskTitle||"").toString().trim()}|${(e.userName||"").toString().trim()}`;
+        return qs === sig;
+      });
+      if (dupInRecent || dupInQueue) return;
+      notificationQueueRef.current.push({ entry, isSelf, sig, ts: now });
+    } catch (err) {
+      notificationQueueRef.current.push({ entry, isSelf });
+    }
     if (notificationProcessingRef.current) return;
     notificationProcessingRef.current = true;
 
     (async function processQueue() {
       while (notificationQueueRef.current.length) {
-        const { entry: item, isSelf: self } = notificationQueueRef.current.shift();
+        const { entry: item, isSelf: self, sig } = notificationQueueRef.current.shift();
         const act = (item.action || "").toLowerCase();
         if (act.includes("created") || act.includes("added")) setActionBanner({ action: "TASK CREATED" });
         else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
         else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
         if (!self) setLiveAction(item);
         try { if (!self) await playChime(); } catch {}
+        try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
         // display duration
         await new Promise(r => setTimeout(r, 3000));
         setLiveAction(null);
