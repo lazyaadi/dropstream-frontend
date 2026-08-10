@@ -59,6 +59,19 @@ export const validatePin = (p) => {
 
 export const playNotifSound = () => {
   try {
+    // stronger guard for mobile: shared window flag + timestamp debounce
+    if (typeof window !== "undefined") {
+      if (window.__syncboard_playing) return;
+      if (!playNotifSound._last) playNotifSound._last = 0;
+      const now = Date.now();
+      // allow one beep per 700ms
+      if (now - playNotifSound._last < 700) return;
+      playNotifSound._last = now;
+      window.__syncboard_playing = true;
+      // clear playing flag after safe interval
+      setTimeout(() => { try { window.__syncboard_playing = false; } catch {} }, 800);
+    }
+
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();

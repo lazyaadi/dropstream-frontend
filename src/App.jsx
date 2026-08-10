@@ -810,7 +810,7 @@ function AppInner() {
       finishBoardHydrationRef.current();
       if (h) setHistory(h);
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
-      if (isProRef.current && h && h[0] && h[0].userName !== userNameRef.current) {
+      if (h && h[0]) {
         setActionBanner(h[0]);
         const a = h[0].action || "";
         if (a.includes("In Progress") || a.includes("Done")) {
@@ -841,9 +841,8 @@ function AppInner() {
       const action = latest?.action || "";
       const isPresenceEvent = action.includes("joined") || action.includes("left");
       if (isPresenceEvent && latest?.userName && latest.userName !== userNameRef.current) {
-        if (isProRef.current) {
-          setActionBanner(latest);
-        }
+        // presence events can optionally show banner for others
+        setActionBanner(latest);
       }
     });
 
@@ -1495,7 +1494,7 @@ function AppInner() {
       <ToastContainer toasts={toasts} />
 
       <AnimatePresence>
-        {actionBanner && isPro && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
+        {actionBanner && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
         {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => setError("")} />}
         {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
         {showContact && (
