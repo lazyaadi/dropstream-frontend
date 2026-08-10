@@ -9,11 +9,19 @@ export default function LiveActionCard({ entry, onDismiss, theme }) {
   }, [entry, onDismiss]);
 
   if (!entry) return null;
-  const action = (entry.action || "").toString();
+  const action = (entry.action || "").toString().toLowerCase();
   const user = entry.userName || entry.user || "Someone";
-  // attempt to extract task title / column from action text if present
-  let detail = action;
-  if (!detail) detail = "performed an action";
+  const taskTitle = entry.taskTitle || entry.title || null;
+  const targetStatus = entry.targetStatus || entry.target || null;
+
+  const renderDetail = () => {
+    if (action.includes("joined")) return (<>{" "}<strong>{user}</strong> joined the workspace.</>);
+    if (action.includes("left")) return (<>{" "}<strong>{user}</strong> left the workspace.</>);
+    if (action.includes("moved")) return (<>{" "}<strong>{user}</strong> moved task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>{targetStatus ? ` to ${targetStatus}` : ""}.</>);
+    if (action.includes("created") || action.includes("added")) return (<>{" "}<strong>{user}</strong> created task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>.</>);
+    if (action.includes("deleted") || action.includes("removed")) return (<>{" "}<strong>{user}</strong> deleted task <strong>{taskTitle ? `'${taskTitle}'` : ""}</strong>.</>);
+    return (<>{" "}<strong>{user}</strong> {entry.action}</>);
+  };
 
   return (
     <motion.div
@@ -32,7 +40,7 @@ export default function LiveActionCard({ entry, onDismiss, theme }) {
             <span className={`text-[9px] font-black uppercase tracking-widest ${theme === "light" ? "text-gray-400" : "text-slate-500"}`}>Live Action</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </div>
-          <p className={`text-xs ${theme === "light" ? "text-gray-900" : "text-slate-200"} leading-relaxed`}>{user} {detail}</p>
+          <p className={`text-xs ${theme === "light" ? "text-gray-900" : "text-slate-200"} leading-relaxed`}><span className="font-normal">{renderDetail()}</span></p>
         </div>
         <button onClick={onDismiss} className={`text-slate-400 hover:text-red-500 transition cursor-pointer`}><X size={14} /></button>
       </div>
