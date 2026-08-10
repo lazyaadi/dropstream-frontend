@@ -24,6 +24,15 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
   });
   const displayUsers = unique.filter(u => u?.name || u?.email);
   const memberList = Array.isArray(members) ? members : [];
+  // Build lookup maps from members so we can fill missing emails/names for online users
+  const memberByEmail = new Map();
+  const memberByName = new Map();
+  memberList.forEach(m => {
+    const me = (typeof m === 'object' && m !== null) ? m : { email: m, name: '' };
+    if (me?.email) memberByEmail.set(normEmail(me.email), me);
+    const n = normName(me.name || me.displayName || '');
+    if (n) memberByName.set(n.toLowerCase(), me);
+  });
   const onlineEmails = new Set(displayUsers.map(u => normEmail(u.email)));
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
@@ -74,8 +83,10 @@ export default function OnlineUsersPanel({ users, members, isPro, onClose, onUpg
           <div className="space-y-2 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
             {displayUsers.map((u, i) => {
               const isSelf = safeCurrent && isSameOnlineUser(u, safeCurrent);
-              const nameText = (u?.name || u?.displayName || "").trim() || (u?.email && u.email.includes("@") ? u.email.split("@")[0] : "Unknown");
-              const displayEmail = u.email || (isSelf ? (safeCurrent?.email || null) : null);
+              const memberMatch = (u?.email && memberByEmail.get(normEmail(u.email))) || (u?.name && memberByName.get(normName(u.name).toLowerCase()));
+              const resolvedName = (u?.name || u?.displayName || memberMatch?.name || "").trim();
+              const nameText = resolvedName || (u?.email && u.email.includes("@") ? u.email.split("@")[0] : "Unknown");
+              const displayEmail = u.email || memberMatch?.email || (isSelf ? (safeCurrent?.email || null) : null);
               const displayName = isSelf ? `${nameText} (You)` : nameText;
               return (
               <div key={normEmail(u.email) || normName(u.name) || i} className={`p-2 rounded-xl border flex items-center gap-2 ${T.historyBg} transition-all hover:${theme === "light" ? "bg-gray-100" : "bg-slate-700/50"}`}>

@@ -1587,6 +1587,7 @@ function AppInner() {
           theme={theme}
           toggleTheme={toggleTheme}
           userName={displayName}
+          userEmail={userEmail}
           role={role}
           isPro={isPro}
           proExpiresAt={proExpiresAt}

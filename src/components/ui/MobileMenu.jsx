@@ -6,6 +6,7 @@ const MobileMenu = ({
   theme,
   toggleTheme,
   userName,
+  userEmail,
   role,
   isPro,
   proExpiresAt,
@@ -83,7 +84,8 @@ const MobileMenu = ({
               </div>
               <div>
                 <p className={`text-sm sm:text-base font-medium ${T.text}`}>{userName}</p>
-                <div className="flex items-center gap-2">
+                {userEmail && <p className={`text-[11px] ${T.subText} truncate`}>{userEmail}</p>}
+                <div className="flex items-center gap-2 mt-1">
                   <span className={`text-[10px] sm:text-[11px] font-normal uppercase ${role === "admin" ? "text-purple-400" : "text-blue-400"}`}>{role}</span>
                   <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-400">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
