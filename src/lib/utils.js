@@ -117,3 +117,21 @@ export const playChime = (() => {
     } catch {}
   };
 })();
+
+// Attempt to proactively unlock/resume audio on first user gesture.
+export const unlockAudio = async () => {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return false;
+    // create a temporary context and resume it to register audio permissions
+    const tmp = new Ctx();
+    if (tmp.state === "suspended") {
+      try { await tmp.resume(); } catch {}
+    }
+    // keep a reference to avoid GC in some browsers
+    try { window.__syncboard_audio_ctx = tmp; } catch {}
+    return true;
+  } catch (err) {
+    return false;
+  }
+};

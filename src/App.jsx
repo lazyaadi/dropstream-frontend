@@ -273,6 +273,7 @@ import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
 import LiveActionCard from "./components/ui/LiveActionCard.jsx";
 import { playChime } from "./lib/utils";
+import { unlockAudio } from "./lib/utils";
 import TaskCard from "./components/board/TaskCard.jsx";
 import Column from "./components/board/Column.jsx";
 import AddTaskModal from "./components/modals/AddTaskModal.jsx";
@@ -375,6 +376,13 @@ function AppInner() {
   const [syncPulse, setSyncPulse]           = useState(false);
 
   useEffect(() => {
+    // Attach a one-time user gesture listener to unlock mobile audio contexts
+    if (typeof document !== "undefined") {
+      const onFirst = () => { try { unlockAudio(); } catch {} document.removeEventListener("click", onFirst); document.removeEventListener("touchstart", onFirst); };
+      document.addEventListener("click", onFirst, { once: true });
+      document.addEventListener("touchstart", onFirst, { once: true });
+    }
+
     console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
   }, [isPro]);
 
@@ -816,19 +824,22 @@ function AppInner() {
       if (h && h[0]) {
         const latest = h[0];
         const action = (latest.action || "").toLowerCase();
-        // show both the simple pill and the detailed live action card
+        const latestUser = (latest.userName || "").toString().trim().toLowerCase();
+        const me = (userNameRef.current || "").toString().trim().toLowerCase();
+        const isSelf = latestUser && me && latestUser === me;
+        // show both the simple pill and the detailed live action card (only for others)
         if (action.includes("created") || action.includes("added")) {
           setActionBanner({ action: "TASK CREATED" });
-          setLiveAction(latest);
+          if (!isSelf) setLiveAction(latest);
         } else if (action.includes("moved")) {
           setActionBanner({ action: "TASK MOVED" });
-          setLiveAction(latest);
+          if (!isSelf) setLiveAction(latest);
         } else if (action.includes("deleted") || action.includes("removed")) {
           setActionBanner({ action: "TASK DELETED" });
-          setLiveAction(latest);
+          if (!isSelf) setLiveAction(latest);
         }
-        // play chime for incoming event
-        try { playChime(); } catch {}
+        // play chime for incoming event (only for others)
+        try { if (!isSelf) playChime(); } catch {}
       } else {
         // keep small sync toast
         addToast("Board synced", "sync");
@@ -854,10 +865,13 @@ function AppInner() {
       const latest = h && h[0];
       if (!latest) return;
       const action = (latest.action || "").toLowerCase();
-      if (action.includes("created") || action.includes("added")) { setActionBanner({ action: "TASK CREATED" }); setLiveAction(latest); }
-      else if (action.includes("moved")) { setActionBanner({ action: "TASK MOVED" }); setLiveAction(latest); }
-      else if (action.includes("deleted") || action.includes("removed")) { setActionBanner({ action: "TASK DELETED" }); setLiveAction(latest); }
-      try { playChime(); } catch {}
+      const latestUser = (latest.userName || "").toString().trim().toLowerCase();
+      const me = (userNameRef.current || "").toString().trim().toLowerCase();
+      const isSelf = latestUser && me && latestUser === me;
+      if (action.includes("created") || action.includes("added")) { setActionBanner({ action: "TASK CREATED" }); if (!isSelf) setLiveAction(latest); }
+      else if (action.includes("moved")) { setActionBanner({ action: "TASK MOVED" }); if (!isSelf) setLiveAction(latest); }
+      else if (action.includes("deleted") || action.includes("removed")) { setActionBanner({ action: "TASK DELETED" }); if (!isSelf) setLiveAction(latest); }
+      try { if (!isSelf) playChime(); } catch {}
     });
 
     socket.on("history_cleared", () => {
