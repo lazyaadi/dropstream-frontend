@@ -378,9 +378,28 @@ function AppInner() {
   useEffect(() => {
     // Attach a one-time user gesture listener to unlock mobile audio contexts
     if (typeof document !== "undefined") {
-      const onFirst = () => { try { unlockAudio(); } catch {} document.removeEventListener("click", onFirst); document.removeEventListener("touchstart", onFirst); };
+      // Preload a lightweight chime file to reduce decode latency
+      const audioPath = "/sounds/chime.mp3";
+      const notificationAudio = new Audio(audioPath);
+      notificationAudio.preload = "auto";
+      try { window.__syncboard_notification_audio = notificationAudio; } catch (err) {}
+
+      const onFirst = async () => {
+        try { await unlockAudio(); } catch {}
+        try {
+          try { notificationAudio.currentTime = 0; } catch {}
+          const p = notificationAudio.play();
+          if (p && p.then) {
+            p.then(() => { try { notificationAudio.pause(); notificationAudio.currentTime = 0; } catch {} });
+          }
+        } catch (err) {}
+        document.removeEventListener("click", onFirst);
+        document.removeEventListener("touchstart", onFirst);
+        document.removeEventListener("keydown", onFirst);
+      };
       document.addEventListener("click", onFirst, { once: true });
       document.addEventListener("touchstart", onFirst, { once: true });
+      document.addEventListener("keydown", onFirst, { once: true });
     }
 
     console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
@@ -559,7 +578,23 @@ function AppInner() {
         else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
         else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
         if (!self) setLiveAction({ ...item, __uid: Date.now() });
-        try { if (!self) await playChime(); } catch {}
+        try {
+          if (!self) {
+            // Attempt to play preloaded audio first, fall back to WebAudio chime
+            try {
+              const audio = (typeof window !== 'undefined') ? window.__syncboard_notification_audio : null;
+              if (audio) {
+                try { audio.currentTime = 0; } catch {}
+                const p = audio.play();
+                if (p && p.then) await p.catch(() => playChime());
+              } else {
+                await playChime();
+              }
+            } catch (e) {
+              await playChime();
+            }
+          }
+        } catch {}
         try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
         // display duration
         await new Promise(r => setTimeout(r, 3000));
