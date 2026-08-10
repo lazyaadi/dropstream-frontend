@@ -892,21 +892,7 @@ function AppInner() {
       setOnlineUsers(Array.from(uniqueUsersMap.values()));
     });
 
-    socket.on("workspace:user_joined", ({ userName, userId } = {}) => {
-      if (!userName) return;
-      const latestUser = (userName || "").toString().trim().toLowerCase();
-      const me = (userNameRef.current || "").toString().trim().toLowerCase();
-      const isSelf = latestUser && me && latestUser === me;
-      enqueueNotification({ action: "joined the workspace", userName, timestamp: new Date().toISOString() }, isSelf);
-    });
-
-    socket.on("workspace:user_left", ({ userName, userId } = {}) => {
-      if (!userName) return;
-      const latestUser = (userName || "").toString().trim().toLowerCase();
-      const me = (userNameRef.current || "").toString().trim().toLowerCase();
-      const isSelf = latestUser && me && latestUser === me;
-      enqueueNotification({ action: "left the workspace", userName, timestamp: new Date().toISOString() }, isSelf);
-    });
+    // 'workspace:user_joined' and 'workspace:user_left' live banner events removed to reduce noise
 
     socket.on("members_update", setMembers);
 
@@ -979,8 +965,7 @@ function AppInner() {
         "load_workspace",
         "receive_update",
         "users_update",
-        "workspace:user_joined",
-        "workspace:user_left",
+        // join/leave live events intentionally omitted
         "members_update",
         "history_update",
         "history_cleared",
