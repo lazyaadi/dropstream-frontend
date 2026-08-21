@@ -326,7 +326,9 @@ function AppInner() {
   const [showContact, setShowContact]       = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showOfflineNotice, setShowOfflineNotice] = useState(false);
-  const [profileHydrating, setProfileHydrating] = useState(false);
+  const [profileHydrating, setProfileHydrating] = useState(() => {
+    return localStorage.getItem(WORKSPACE_SESSION_KEY) !== null;
+  });
   const [activeTask, setActiveTask]         = useState(null);
   const [toasts, setToasts]                 = useState([]);
   const [, setSyncPulse]           = useState(false);
