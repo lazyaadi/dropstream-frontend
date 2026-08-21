@@ -6,10 +6,10 @@ import {
   DndContext, PointerSensor, TouchSensor,  
   useSensor, useSensors, closestCorners, pointerWithin, DragOverlay,
 } from "@dnd-kit/core";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, Info, Shield,
-  History, Users, LogOut, Trash2, Search, Lock,
+  Search, Lock,
 } from "lucide-react";
 
 // ─── CONSTANTS ───
@@ -40,12 +40,6 @@ const COLUMNS_LIGHT = [
   { id: "in-progress", label: "In Progress", color: "#d97706", badge: "text-amber-700 bg-amber-100 border-amber-300", ring: "border-amber-300 bg-amber-50", dot: "bg-amber-500" },
   { id: "done", label: "Done", color: "#059669", badge: "text-emerald-700 bg-emerald-100 border-emerald-300", ring: "border-emerald-300 bg-emerald-50", dot: "bg-emerald-500" },
 ];
-
-const PRIORITY = {
-  low:    { label: "Low",    cls: "text-white bg-emerald-500 border-emerald-600/60", clsLight: "text-white bg-emerald-500 border-emerald-600/60" },
-  medium: { label: "Medium", cls: "text-white bg-amber-500 border-amber-600/60",     clsLight: "text-white bg-amber-500 border-amber-600/60" },
-  high:   { label: "High",   cls: "text-white bg-red-500 border-red-600/60",         clsLight: "text-white bg-red-500 border-red-600/60" },
-};
 
 const TD = {
   bg: "bg-[#080c14]", nav: "bg-slate-900/80 border-slate-800/60",
@@ -115,42 +109,8 @@ const loadGoogleIdentityScript = () => {
 };
 
 // ─── UTILS ───
-const fmtTime = (date) => {
-  if (!date) return "";
-  const d = new Date(date), now = new Date(), diff = now - d;
-  if (diff < 60000)    return "just now";
-  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-};
-
-const fmtFull = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-  });
-};
-
-const fmtDateTime = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  });
-};
-
-const FLOAT_PANEL_CLASS = "fixed left-4 top-20 z-[90] w-64 sm:w-72 rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto";
-
 const normEmail = (e) => (e || "").trim().toLowerCase();
 const normName = (n) => (n || "").trim();
-const isSameOnlineUser = (a, b) => {
-  if (!a || !b) return false;
-  const ae = normEmail(a.email);
-  const be = normEmail(b.email);
-  if (ae && be && ae === be) return true;
-  const an = normName(a.name);
-  const bn = normName(b.name);
-  return !!(an && bn && an === bn);
-};
 
 const validateEmail = (e) => {
   if (!e?.trim()) return "Email is required.";
@@ -272,7 +232,6 @@ import ParticleBg from "./components/effects/ParticleBg.jsx";
 import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
 import LiveActionCard from "./components/ui/LiveActionCard.jsx";
-// audio utilities removed
 import TaskCard from "./components/board/TaskCard.jsx";
 import Column from "./components/board/Column.jsx";
 import AddTaskModal from "./components/modals/AddTaskModal.jsx";
@@ -285,7 +244,6 @@ import WorkspaceErrorModal from "./components/modals/WorkspaceErrorModal.jsx";
 import HistoryPanel from "./components/panels/HistoryPanel.jsx";
 import MembersPanel from "./components/panels/MembersPanel.jsx";
 import OnlineUsersPanel from "./components/panels/OnlineUsersPanel.jsx";
-import OnlineAvatars from "./components/ui/OnlineAvatars.jsx";
 import PinInput from "./components/ui/PinInput.jsx";
 import QuotaBanner from "./components/ui/QuotaBanner.jsx";
 import SearchBar from "./components/ui/SearchBar.jsx";
@@ -322,7 +280,6 @@ export default function App() {
 function AppInner() {
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
   const T    = theme === "light" ? TL : TD;
-  const COLS = theme === "light" ? COLUMNS_LIGHT : COLUMNS;
   const toggleTheme = useCallback(() => {
     setTheme(t => { const n = t === "dark" ? "light" : "dark"; localStorage.setItem(THEME_KEY, n); return n; });
   }, []);
@@ -372,11 +329,7 @@ function AppInner() {
   const [profileHydrating, setProfileHydrating] = useState(false);
   const [activeTask, setActiveTask]         = useState(null);
   const [toasts, setToasts]                 = useState([]);
-  const [syncPulse, setSyncPulse]           = useState(false);
-
-  useEffect(() => {
-    console.log('[DEBUG REACT STATE CHANGED] isPro is now:', isPro);
-  }, [isPro]);
+  const [, setSyncPulse]           = useState(false);
 
   const validMembers = useMemo(() => {
     return (Array.isArray(members) ? members : []).filter((member) => {
@@ -398,6 +351,7 @@ function AppInner() {
       };
     });
   }, [validMembers]);
+
   const [deleteConfirmation, setDeleteConfirmation] = useState({ show: false, input: "" });
   const [searchQ, setSearchQ]               = useState("");
   const [typers, setTypers]                 = useState([]);
@@ -409,7 +363,7 @@ function AppInner() {
 
   const overlayIsActive = showAdd || showHistory || showMembers || showProModal || showOnlineUsers || showAbout || showContact || showMobileMenu || deleteConfirmation.show;
 
-  // Mobile-only scroll locking: prevents desktop layout shifting when popups open
+  // Mobile-only scroll locking designed for iOS Safari dynamic viewports
   useEffect(() => {
     if (typeof window === "undefined" || typeof document === "undefined") return undefined;
     
@@ -417,43 +371,19 @@ function AppInner() {
     if (!isMobile) return undefined;
 
     const previousHtmlOverflow = document.documentElement.style.overflow;
-    const previousHtmlOverflowY = document.documentElement.style.overflowY;
-    const previousHtmlTouchAction = document.documentElement.style.touchAction;
-    const previousHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
-    const previousOverflow = document.body.style.overflow;
-    const previousOverflowY = document.body.style.overflowY;
-    const previousTouchAction = document.body.style.touchAction;
-    const previousOverscrollBehavior = document.body.style.overscrollBehavior;
+    const previousBodyOverflow = document.body.style.overflow;
 
     if (overlayIsActive) {
       document.documentElement.style.overflow = "hidden";
-      document.documentElement.style.overflowY = "hidden";
-      document.documentElement.style.touchAction = "none";
-      document.documentElement.style.overscrollBehavior = "none";
       document.body.style.overflow = "hidden";
-      document.body.style.overflowY = "hidden";
-      document.body.style.touchAction = "none";
-      document.body.style.overscrollBehavior = "none";
     } else {
       document.documentElement.style.overflow = previousHtmlOverflow || "";
-      document.documentElement.style.overflowY = previousHtmlOverflowY || "";
-      document.documentElement.style.touchAction = previousHtmlTouchAction || "";
-      document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior || "";
-      document.body.style.overflow = previousOverflow || "";
-      document.body.style.overflowY = previousOverflowY || "";
-      document.body.style.touchAction = previousTouchAction || "";
-      document.body.style.overscrollBehavior = previousOverscrollBehavior || "";
+      document.body.style.overflow = previousBodyOverflow || "";
     }
 
     return () => {
       document.documentElement.style.overflow = previousHtmlOverflow;
-      document.documentElement.style.overflowY = previousHtmlOverflowY;
-      document.documentElement.style.touchAction = previousHtmlTouchAction;
-      document.documentElement.style.overscrollBehavior = previousHtmlOverscrollBehavior;
-      document.body.style.overflow = previousOverflow;
-      document.body.style.overflowY = previousOverflowY;
-      document.body.style.touchAction = previousTouchAction;
-      document.body.style.overscrollBehavior = previousOverscrollBehavior;
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, [overlayIsActive]);
 
@@ -497,8 +427,9 @@ function AppInner() {
       boardHydrateTimerRef.current = null;
     }, 380);
   };
+
   const [actionBanner, setActionBanner]     = useState(null);
-  const [liveAction, setLiveAction] = useState(null);
+  const [liveAction, setLiveAction]         = useState(null);
   const [wsErrorType, setWsErrorType]       = useState(null);
   const [wsErrorName, setWsErrorName]       = useState("");
 
@@ -506,28 +437,25 @@ function AppInner() {
   const userNameRef = useRef(userName);
   const workspaceNameRef = useRef(workspaceName);
   const userEmailRef = useRef(userEmail);
-  const wsPinRef = useRef(wsPin);
   const authMethodRef = useRef(authMethod);
   const googleButtonRef = useRef(null);
   const pendingGoogleAuthTokenRef = useRef("");
-  // Notification queue to serialize live-action banners
+  
   const notificationQueueRef = useRef([]);
   const notificationProcessingRef = useRef(false);
-  const recentNotifSignaturesRef = useRef([]); // { sig, ts }
+  const recentNotifSignaturesRef = useRef([]);
+
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
   useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
-  useEffect(() => { wsPinRef.current = wsPin; }, [wsPin]);
   useEffect(() => { authMethodRef.current = authMethod; }, [authMethod]);
 
-  // Enqueue a notification (entry) for sequential display
   const enqueueNotification = (entry, isSelf = false) => {
-    if (isSelf) return; // do not enqueue notifications originated by this client
+    if (isSelf) return;
     try {
       const sig = `${(entry.action||"").toString().trim().toLowerCase()}|${(entry.taskTitle||"").toString().trim()}|${(entry.userName||"").toString().trim()}`;
       const now = Date.now();
-      // prune old signatures
       recentNotifSignaturesRef.current = recentNotifSignaturesRef.current.filter(x => now - x.ts < 1000);
       const dupInRecent = recentNotifSignaturesRef.current.some(x => x.sig === sig && now - x.ts < 500);
       const dupInQueue = notificationQueueRef.current.some(q => {
@@ -537,7 +465,7 @@ function AppInner() {
       });
       if (dupInRecent || dupInQueue) return;
       notificationQueueRef.current.push({ entry, isSelf, sig, ts: now });
-    } catch (err) {
+    } catch {
       notificationQueueRef.current.push({ entry, isSelf });
     }
     if (notificationProcessingRef.current) return;
@@ -551,18 +479,17 @@ function AppInner() {
         else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
         else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
         if (!self) setLiveAction({ ...item, __uid: Date.now() });
-        // No sound for socket-driven notifications to avoid autoplay issues
+        
         try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
-        // display duration
         await new Promise(r => setTimeout(r, 3000));
         setLiveAction(null);
         setActionBanner(null);
-        // small gap to allow exit animation
         await new Promise(r => setTimeout(r, 160));
       }
       notificationProcessingRef.current = false;
     })();
   };
+
   useEffect(() => {
     if (!authReady || !userEmail) return;
     const persisted = getPersistedProState(userEmail);
@@ -570,9 +497,10 @@ function AppInner() {
     setProExpiresAt(persisted.proExpiresAt);
   }, [authReady, userEmail]);
 
+  // Touch sensor tuned specifically for iOS Safari drag operations
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor,   { activationConstraint: { delay: 120, tolerance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 180, tolerance: 8 } }),
   );
 
   const collisionDetection = useCallback((args) => {
@@ -617,31 +545,14 @@ function AppInner() {
 
           (async () => {
             try {
-              console.log("PRO CLIENT HYDRATE START:", {
-                email: s.userEmail,
-                sessionIsPro: s.isPro,
-                sessionProExpiresAt: s.proExpiresAt || null,
-              });
               const response = await fetch(`${SERVER_URL}/api/user/profile?email=${encodeURIComponent(s.userEmail)}`, {
                 credentials: "include",
-              });
-              console.log("PRO CLIENT HYDRATE RESPONSE RECEIVED:", {
-                ok: response.ok,
-                status: response.status,
               });
               if (response.ok) {
                 const result = await response.json();
                 const profile = result?.profile || null;
-                console.log("PRO CLIENT HYDRATE PROFILE:", {
-                  isPro: profile?.isPro,
-                  proExpiresAt: profile?.proExpiresAt || null,
-                });
                 const serverIsPro = !!profile?.isPro;
                 const serverExpiresAt = profile?.proExpiresAt || null;
-                console.log("PRO CLIENT HYDRATE APPLY:", {
-                  serverIsPro,
-                  serverExpiresAt,
-                });
                 setIsPro(prev => serverIsPro || prev);
                 setProExpiresAt(prev => serverExpiresAt || prev || null);
                 if (serverIsPro) {
@@ -670,7 +581,7 @@ function AppInner() {
           localStorage.removeItem(WORKSPACE_SESSION_KEY);
           setProfileHydrating(false);
         }
-      } catch (err) {
+      } catch {
         localStorage.removeItem(WORKSPACE_SESSION_KEY);
         setProfileHydrating(false);
       }
@@ -708,17 +619,6 @@ function AppInner() {
       } catch { localStorage.removeItem(SESSION_KEY); }
     }
   }, []);
-
-  useEffect(() => {
-    const h = (e) => {
-      const tag = document.activeElement?.tagName;
-      if (isJoined && e.key === "n" && tag !== "INPUT" && tag !== "TEXTAREA") {
-        if (role === "member" || role === "admin") tryOpenAdd();
-      }
-    };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [isJoined, role]);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -811,16 +711,7 @@ function AppInner() {
       addToast("Pro deactivated", "warn");
     });
 
-    socket.on("pro_deactivate_error", (msg) => {
-      addToast(msg || "Pro deactivation failed", "warn");
-    });
-
     socket.on("load_workspace", ({ tasks: t, projectName: pn, role: r, history: h, members: m, taskCount, resetAt, isPro: sp, proExpiresAt: exp }) => {
-      console.log('[DEBUG CLIENT RECEIVED load_workspace]', {
-        incomingIsPro: sp,
-        incomingProExpiresAt: exp,
-        currentStateIsPro: isPro,
-      });
       setTasks(t || []); setProjectName(pn); setIsJoined(true); setAutoJoining(false);
       finishBoardHydrationRef.current();
       setRole(r || "member"); setHistory(h || []); setMembers(m || []);
@@ -867,7 +758,6 @@ function AppInner() {
         const isSelf = latestUser && me && latestUser === me;
         enqueueNotification(latest, isSelf);
       } else {
-        // keep small sync toast
         addToast("Board synced", "sync");
       }
     });
@@ -884,8 +774,6 @@ function AppInner() {
       setOnlineUsers(Array.from(uniqueUsersMap.values()));
     });
 
-    // 'workspace:user_joined' and 'workspace:user_left' live banner events removed to reduce noise
-
     socket.on("members_update", setMembers);
 
     socket.on("history_update", (h) => {
@@ -896,10 +784,6 @@ function AppInner() {
       const me = (userNameRef.current || "").toString().trim().toLowerCase();
       const isSelf = latestUser && me && latestUser === me;
       enqueueNotification(latest, isSelf);
-    });
-
-    socket.on("history_cleared", () => {
-      setHistory([]);
     });
 
     socket.on("history_cleared", () => {
@@ -947,35 +831,16 @@ function AppInner() {
     return () => {
       if (boardHydrateTimerRef.current) clearTimeout(boardHydrateTimerRef.current);
       const socketEvents = [
-        "connect",
-        "auth_success",
-        "auth_error",
-        "auth_google_error",
-        "task_count_update",
-        "task_limit_reached",
-        "pro_activated",
-        "load_workspace",
-        "receive_update",
-        "users_update",
-        // join/leave live events intentionally omitted
-        "members_update",
-        "history_update",
-        "history_cleared",
-        "pro_activate_error",
-        "pro_deactivated",
-        "pro_deactivate_error",
-        "error_msg",
-        "permission_denied",
-        "kicked",
-        "typing_update",
-        "typing_clear",
-        "reconnect",
+        "connect", "auth_success", "auth_error", "auth_google_error",
+        "task_count_update", "task_limit_reached", "pro_activated", "load_workspace",
+        "receive_update", "users_update", "members_update", "history_update",
+        "history_cleared", "pro_activate_error", "pro_deactivated", "pro_deactivate_error",
+        "error_msg", "permission_denied", "kicked", "typing_update", "typing_clear", "reconnect",
       ];
 
-      socketEvents
-        .forEach(ev => socket.off(ev));
+      socketEvents.forEach(ev => socket.off(ev));
     };
-  }, []);
+  }, [addToast, workspaceName]);
 
   useEffect(() => {
     if (authReady || authStep !== "email" || !GOOGLE_CLIENT_ID) return;
@@ -1180,7 +1045,7 @@ function AppInner() {
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
     setActionBanner({ action: "TASK CREATED" });
-  }, [tasks, isPro, userTaskCount, displayName, role, workspaceName, addToast]);
+  }, [tasks, isPro, userTaskCount, displayName, role, workspaceName]);
 
   const deleteTask = useCallback((taskId) => {
     const task = tasks.find(t => t.id === taskId);
@@ -1188,7 +1053,7 @@ function AppInner() {
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "delete_task", taskTitle: task?.title || "" } });
     setActionBanner({ action: "TASK DELETED" });
-  }, [tasks, workspaceName, addToast]);
+  }, [tasks, workspaceName]);
 
   const tryOpenAdd = useCallback(() => {
     const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
@@ -1263,7 +1128,7 @@ function AppInner() {
 
   if (!isJoined) {
     return (
-      <div className={`relative min-h-screen ${T.bg} font-sans ${T.text} flex items-center justify-center overflow-hidden p-4`}>
+      <div className={`relative min-h-screen ${T.bg} font-sans ${T.text} flex items-center justify-center overflow-x-hidden p-4`}>
         <ParticleBg theme={theme} />
 
         <button onClick={toggleTheme}
@@ -1436,7 +1301,7 @@ function AppInner() {
 
                     <div className="flex gap-3 mt-6">
                       <button onClick={() => openWorkspaceStep("create")}
-                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm bg-linear-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
+                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
                         <Plus size={18}/><span>New Workspace</span>
                       </button>
                       <button onClick={() => openWorkspaceStep("join")}
@@ -1466,7 +1331,7 @@ function AppInner() {
                       className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl font-semibold text-xs uppercase tracking-[0.18em] transition-all active:scale-95 cursor-pointer mt-4
                         ${isPro
                           ? `${theme === "light" ? "bg-amber-100 border-2 border-amber-400 text-amber-700" : "bg-amber-500/15 border-2 border-amber-500/50 text-amber-400"}`
-                          : `bg-linear-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
+                          : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
                         }`}
                     >
                       <span>{isPro ? "Pro Activated" : "Upgrade to Pro"}</span>
@@ -1543,7 +1408,7 @@ function AppInner() {
   }
 
   return (
-    <div className={`relative min-h-screen ${T.bg} ${T.text} font-sans`}>
+    <div className={`relative min-h-screen ${T.bg} ${T.text} font-sans pb-safe`}>
       <ParticleBg theme={theme} />
       <ToastContainer toasts={toasts} />
 
@@ -1661,7 +1526,7 @@ function AppInner() {
 
       <QuotaBanner userTaskCount={userTaskCount} limit={limit} userResetDate={userResetDate} isPro={isPro} onUpgrade={() => setShowProModal(true)} theme={theme} />
 
-      <main className="relative z-10 max-w-360 mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
