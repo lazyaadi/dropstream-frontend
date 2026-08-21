@@ -17,10 +17,27 @@ export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade }
     const f = e.target.files[0];
     if (!f) return;
     if (f.size > 5 * 1024 * 1024) { setImgError("Max 5MB allowed."); return; }
-    const reader = new FileReader();
-    reader.onload = ev => setImage(ev.target.result);
-    reader.readAsDataURL(f);
     setImgError("");
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img.onload = () => {
+        const maxDim = 1280;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        setImage(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
   };
 
   const handleAdd = () => {
