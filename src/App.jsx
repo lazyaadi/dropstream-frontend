@@ -1088,7 +1088,8 @@ function AppInner() {
   const total    = tasks.length;
   const progress = total ? Math.round((done / total) * 100) : 0;
   const otherTypers = typers.filter(t => t.name !== displayName);
-  const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
+  const effectiveIsPro = isPro || proHydrating;
+  const limit = effectiveeffectiveIsPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
   const proExpiryLabel = useMemo(() => {
     if (!proExpiresAt) return "";
     const msLeft = new Date(proExpiresAt).getTime() - Date.now();
@@ -1161,7 +1162,7 @@ function AppInner() {
               }}
             />
           )}
-          {showProModal && <ProModal key="pro-modal" isPro={isPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
+          {showProModal && <ProModal key="pro-modal"  isPro={effectiveIsPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
         </AnimatePresence>
 
         <div className={`relative z-10 w-full max-w-md`}>
@@ -1339,7 +1340,7 @@ function AppInner() {
                           : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
                         }`}
                     >
-                      <span>{isPro ? "Pro Activated" : "Upgrade to Pro"}</span>
+                      <span>{effectiveIsPro ? "Pro Activated" : "Upgrade to Pro"}</span>
                     </button>
                   </div>
                 ) : (
@@ -1436,16 +1437,16 @@ function AppInner() {
             }}
           />
         )}
-        {showAdd && <AddTaskModal key="add-task-modal" onAdd={addTask} onClose={() => setShowAdd(false)} theme={theme} isPro={isPro} onUpgrade={() => setShowProModal(true)} />}
-        {showProModal && <ProModal key="pro-modal" isPro={isPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
+        {showAdd && <AddTaskModal key="add-task-modal" onAdd={addTask} onClose={() => setShowAdd(false)} theme={theme} isPro={effectiveIsPro} onUpgrade={() => setShowProModal(true)} />}
+        {showProModal && <ProModal key="pro-modal" isPro={effectiveIsPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
-        {showHistory && <HistoryPanel key="history-panel" history={history} isPro={isPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
-        {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={isPro} onUpgrade={openUpgradeProModal} theme={theme} />}
+        {showHistory && <HistoryPanel key="history-panel" history={history} isPro={effectiveIsPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
+        {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={effectiveIsPro} onUpgrade={openUpgradeProModal} theme={theme} />}
         {showOnlineUsers && (
           <OnlineUsersPanel key="online-users-panel"
             users={onlineUsers}
             members={displayMembers}
-            isPro={isPro}
+            isPro={effectiveIsPro}
             onClose={() => setShowOnlineUsers(false)}
             onUpgrade={openUpgradeProModal}
             theme={theme}
@@ -1486,7 +1487,7 @@ function AppInner() {
         toggleTheme={toggleTheme}
         projectName={projectName}
         workspaceName={workspaceName}
-        isPro={isPro}
+         isPro={effectiveIsPro}
         proExpiryLabel={proExpiryLabel}
         onlineUsers={onlineUsers}
         userName={displayName}
@@ -1513,7 +1514,7 @@ function AppInner() {
           userName={displayName}
           userEmail={userEmail}
           role={role}
-          isPro={isPro}
+           isPro={effectiveIsPro}
           proExpiresAt={proExpiresAt}
           workspaceName={workspaceName}
           tasks={tasks || []}
@@ -1529,7 +1530,7 @@ function AppInner() {
         />
       )}
 
-      <QuotaBanner userTaskCount={userTaskCount} limit={limit} userResetDate={userResetDate} isPro={isPro} onUpgrade={() => setShowProModal(true)} theme={theme} />
+      <QuotaBanner userTaskCount={userTaskCount} limit={limit} userResetDate={userResetDate}  isPro={effectiveIsPro} onUpgrade={() => setShowProModal(true)} theme={theme} />
 
       <main className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
@@ -1554,7 +1555,7 @@ function AppInner() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {isPro ? (
+            {effectiveIsPro ? (
               <div className="flex-1 sm:w-52">
                 <SearchBar value={searchQ} onChange={setSearchQ} theme={theme} />
               </div>
@@ -1568,7 +1569,7 @@ function AppInner() {
               </button>
             )}
 
-            {!isPro && (
+            {!effectiveIsPro && (
               <button onClick={() => setShowProModal(true)}
                 className="flex items-center gap-1 border border-amber-500/30 text-amber-500 px-3 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest cursor-pointer hover:bg-amber-500/10 transition-all whitespace-nowrap shadow-sm">
                 Pro
@@ -1609,7 +1610,7 @@ function AppInner() {
                 <Column key={col.id} col={col}
                   tasks={colTasks}
                   isLoading={boardHydrating && colTasks.length === 0 && !isProgressColumn}
-                  onDelete={deleteTask} role={role} isPro={isPro} theme={theme}
+                  onDelete={deleteTask} role={role}  isPro={effectiveIsPro} theme={theme}
                   onUpgrade={() => setShowProModal(true)}
                 />
               );
@@ -1618,7 +1619,7 @@ function AppInner() {
           <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18, 0.67, 0.6, 1)" }}>
             {activeTask ? (
               <div className="scale-[1.02] rotate-1 shadow-2xl will-change-transform">
-                <TaskCard task={activeTask} onDelete={() => {}} role={role} isPro={isPro} isOverlay theme={theme} onUpgrade={() => setShowProModal(true)} />
+                <TaskCard task={activeTask} onDelete={() => {}} role={role}  isPro={effectiveIsPro} isOverlay theme={theme} onUpgrade={() => setShowProModal(true)} />
               </div>
             ) : null}
           </DragOverlay>
