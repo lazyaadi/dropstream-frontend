@@ -1089,7 +1089,7 @@ function AppInner() {
   const progress = total ? Math.round((done / total) * 100) : 0;
   const otherTypers = typers.filter(t => t.name !== displayName);
   const effectiveIsPro = isPro || proHydrating;
-  const limit = effectiveeffectiveIsPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
+  const limit = effectiveIsPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
   const proExpiryLabel = useMemo(() => {
     if (!proExpiresAt) return "";
     const msLeft = new Date(proExpiresAt).getTime() - Date.now();
