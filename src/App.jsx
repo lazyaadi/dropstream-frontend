@@ -300,8 +300,9 @@ function AppInner() {
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
   const [workspaceStepLoading, setWorkspaceStepLoading] = useState(false);
-  const persistedProState = useMemo(() => getPersistedProState(getStoredProfileEmail()), []);
+    const persistedProState = useMemo(() => getPersistedProState(getStoredProfileEmail()), []);
   const [isPro, setIsPro]               = useState(() => persistedProState.isPro);
+  const [proHydrating, setProHydrating] = useState(() => localStorage.getItem(WORKSPACE_SESSION_KEY) !== null);
 
   const [isJoined, setIsJoined]       = useState(() => {
     const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
@@ -575,8 +576,9 @@ function AppInner() {
                 });
               }
 
-              setAuthReady(true);
+             setAuthReady(true);
               setProfileHydrating(false);
+              setProHydrating(false);
             }
           })();
         } else {
@@ -713,7 +715,8 @@ function AppInner() {
       addToast("Pro deactivated", "warn");
     });
 
-    socket.on("load_workspace", ({ tasks: t, projectName: pn, role: r, history: h, members: m, taskCount, resetAt, isPro: sp, proExpiresAt: exp }) => {
+       socket.on("load_workspace", ({ tasks: t, projectName: pn, role: r, history: h, members: m, taskCount, resetAt, isPro: sp, proExpiresAt: exp }) => {
+      setProHydrating(false);
       setTasks(t || []); setProjectName(pn); setIsJoined(true); setAutoJoining(false);
       finishBoardHydrationRef.current();
       setRole(r || "member"); setHistory(h || []); setMembers(m || []);
@@ -1012,9 +1015,9 @@ function AppInner() {
 
   const displayName = workspaceDisplayName || userName;
 
-  const addTask = useCallback((taskData) => {
+   const addTask = useCallback((taskData) => {
     const { title, description, priority, dueDate, image } = taskData;
-    const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
+    const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     const taskId = `task-${Date.now()}`;
     const safeCreatorName = displayName;
@@ -1057,12 +1060,12 @@ function AppInner() {
     setActionBanner({ action: "TASK DELETED" });
   }, [tasks, workspaceName]);
 
-  const tryOpenAdd = useCallback(() => {
-    const limit = isPro ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
+     const tryOpenAdd = useCallback(() => {
+    const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     if (role !== "member" && role !== "admin") { addToast("Only members/admins can add tasks", "warn"); return; }
     setShowAdd(true);
-  }, [isPro, userTaskCount, role, addToast]);
+  }, [isPro, proHydrating, userTaskCount, role, addToast]);
 
   const handleProActivated = useCallback((proPin) => {
     setIsPro(true);
