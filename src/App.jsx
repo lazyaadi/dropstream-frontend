@@ -437,6 +437,7 @@ function AppInner() {
   const [wsErrorName, setWsErrorName]       = useState("");
 
   const isProRef    = useRef(isPro);
+  const effectiveIsProRef = useRef(isPro);
   const userNameRef = useRef(userName);
   const workspaceNameRef = useRef(workspaceName);
   const userEmailRef = useRef(userEmail);
@@ -449,6 +450,7 @@ function AppInner() {
   const recentNotifSignaturesRef = useRef([]);
 
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
+  useEffect(() => { effectiveIsProRef.current = isPro || proHydrating; }, [isPro, proHydrating]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
   useEffect(() => { workspaceNameRef.current = workspaceName; }, [workspaceName]);
   useEffect(() => { userEmailRef.current = userEmail; }, [userEmail]);
@@ -756,13 +758,13 @@ function AppInner() {
       finishBoardHydrationRef.current();
       if (h) setHistory(h);
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
-      if (h && h[0]) {
+      if (h && h[0] && effectiveIsProRef.current) {
         const latest = h[0];
         const latestUser = (latest.userName || "").toString().trim().toLowerCase();
         const me = (userNameRef.current || "").toString().trim().toLowerCase();
         const isSelf = latestUser && me && latestUser === me;
         enqueueNotification(latest, isSelf);
-      } else {
+      } else if (!h || !h[0]) {
         addToast("Board synced", "sync");
       }
     });
@@ -784,7 +786,7 @@ function AppInner() {
     socket.on("history_update", (h) => {
       setHistory(h || []);
       const latest = h && h[0];
-      if (!latest) return;
+      if (!latest || !effectiveIsProRef.current) return;
       const latestUser = (latest.userName || "").toString().trim().toLowerCase();
       const me = (userNameRef.current || "").toString().trim().toLowerCase();
       const isSelf = latestUser && me && latestUser === me;
