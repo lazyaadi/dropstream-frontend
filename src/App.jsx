@@ -666,7 +666,9 @@ function AppInner() {
       } else {
         clearPersistedProState(data.email || userEmailRef.current);
       }
-      setUserName(userNameRef.current?.trim() || data.name || "");
+      const pendingName = localStorage.getItem("sb_pending_name");
+      setUserName(userNameRef.current?.trim() || pendingName || data.name || "");
+      localStorage.removeItem("sb_pending_name");
       setUserEmail(data.email);
       setAuthReady(true);
     });
@@ -893,6 +895,7 @@ function AppInner() {
 
   const handleNameNext = useCallback(() => {
     if (!userName.trim()) return setAuthError("Your name is required.");
+    localStorage.setItem("sb_pending_name", userName.trim());
     setAuthError(""); setAuthMethod("password"); setAuthStep("email");
   }, [userName]);
 
