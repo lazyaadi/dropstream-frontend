@@ -360,6 +360,11 @@ function AppInner() {
   const [typers, setTypers]                 = useState([]);
   const [taskAddedPulse, setTaskAddedPulse] = useState(false);
   const [autoJoining, setAutoJoining]       = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem("sb_sound_enabled") !== "0");
+  const soundEnabledRef = useRef(soundEnabled);
+  const audioCtxRef = useRef(null);
+  useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+  useEffect(() => { localStorage.setItem("sb_sound_enabled", soundEnabled ? "1" : "0"); }, [soundEnabled]);
   const [boardHydrating, setBoardHydrating]   = useState(false);
   const boardHydrateTimerRef = useRef(null);
   const finishBoardHydrationRef = useRef(() => {});
@@ -483,7 +488,10 @@ function AppInner() {
         if (act.includes("created") || act.includes("added")) setActionBanner({ action: "TASK CREATED" });
         else if (act.includes("moved")) setActionBanner({ action: "TASK MOVED" });
         else if (act.includes("deleted") || act.includes("removed")) setActionBanner({ action: "TASK DELETED" });
-        if (!self) setLiveAction({ ...item, __uid: Date.now() });
+        if (!self) {
+          setLiveAction({ ...item, __uid: Date.now() });
+          if (effectiveIsProRef.current && soundEnabledRef.current) playNotificationSound();
+        }
         
         try { if (sig) recentNotifSignaturesRef.current.push({ sig, ts: Date.now() }); } catch {}
         await new Promise(r => setTimeout(r, 3000));
@@ -511,6 +519,43 @@ function AppInner() {
   const collisionDetection = useCallback((args) => {
     const pointerHits = pointerWithin(args);
     return pointerHits.length ? pointerHits : closestCorners(args);
+  }, []);
+
+  const playNotificationSound = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx && !audioCtxRef.current) audioCtxRef.current = new Ctx();
+      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume().catch(() => {});
+      }
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
   }, []);
 
   const addToast = useCallback((msg, type = "sync") => {
@@ -1351,12 +1396,17 @@ function AppInner() {
                 ) : (
                   workspaceStepLoading ? (
                     <div className="flex items-center justify-center py-10">
-                      <div className="rounded-3xl border px-5 py-6 text-center shadow-xl backdrop-blur-xl w-full max-w-sm">
-                        <div className="mx-auto w-12 h-12 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-3">
-                          <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <div className={`rounded-3xl border shadow-2xl px-6 py-5 text-center backdrop-blur-xl w-full max-w-sm ${T.loginCard}`}>
+                        <div className="mx-auto w-14 h-14 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-4">
+                          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                         </div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}>Preparing workspace</p>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}> Preparing work space</p>
                         <p className={`text-sm mt-2 ${T.text}`}>Loading the workspace form…</p>
+                        <div className="mt-4 flex items-center justify-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse [animation-delay:120ms]" />
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse [animation-delay:240ms]" />
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -1510,6 +1560,8 @@ function AppInner() {
         progress={progress}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(v => !v)}
       />
 
       {showMobileMenu && (
@@ -1532,6 +1584,8 @@ function AppInner() {
           onOpenProModal={openUpgradeProModal}
           handleLeave={handleLeave}
           setIsMenuOpen={setShowMobileMenu}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled(v => !v)}
         />
       )}
 

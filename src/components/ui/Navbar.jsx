@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield, History, Users, LogOut, Trash2, Search, Lock, Menu, X } from "lucide-react";
+import { Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield, History, Users, LogOut, Trash2, Search, Lock, Menu, X, Volume2, VolumeX } from "lucide-react";
 import OnlineAvatars from "./OnlineAvatars";
 
 const Navbar = ({
@@ -26,6 +26,8 @@ const Navbar = ({
   progress,
   showMobileMenu,
   setShowMobileMenu,
+  soundEnabled,
+  onToggleSound,
   
 }) => {
   return (
@@ -87,6 +89,12 @@ const Navbar = ({
               className={`flex items-center justify-center p-2 rounded-lg border transition cursor-pointer ${theme === "dark" ? "bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:border-slate-600 hover:bg-slate-800/60" : "bg-gray-100 border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-200"}`}
               title="Toggle theme">
               {theme === "dark" ? <Sun size={14}/> : <Moon size={14}/>}
+            </button>
+            <button onClick={() => { if (!isPro) { setShowProModal(true); return; } onToggleSound?.(); }}
+              className={`flex items-center justify-center p-2 rounded-lg border transition cursor-pointer relative ${theme === "dark" ? "bg-slate-800/40 border-slate-700/50 text-slate-300 hover:border-slate-600 hover:bg-slate-800/60" : "bg-gray-100 border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-200"}`}
+              title={isPro ? (soundEnabled ? "Mute live alerts" : "Unmute live alerts") : "Pro feature — live alert sounds"}>
+              {soundEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
+              {!isPro && <Lock size={9} className="absolute -top-1 -right-1 opacity-70"/>}
             </button>
             
             <div className={`flex items-center gap-2 pl-3 border-l ${T.divider}`}>

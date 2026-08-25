@@ -1,5 +1,5 @@
 import React from "react";
-import { X, History, Users, Moon, LogOut, ChevronRight } from "lucide-react";
+import { X, History, Users, Moon, LogOut, ChevronRight, Volume2, VolumeX, Lock } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MobileMenu = ({
@@ -21,6 +21,8 @@ const MobileMenu = ({
   onOpenProModal,
   handleLeave,
   setIsMenuOpen,
+  soundEnabled,
+  onToggleSound,
 }) => {
   const T = theme === "light" ? {
     bg: "bg-gray-50",
@@ -140,6 +142,23 @@ const MobileMenu = ({
           <div className={`w-full p-4 rounded-xl ${T.card}`}>
             <p className={`text-[10px] font-semibold uppercase ${T.subText} mb-3 tracking-[0.24em]`}>MENU</p>
             <div className="space-y-2">
+              <button
+                onClick={() => {
+                  if (!isPro) { setIsMenuOpen(false); onOpenProModal?.(); return; }
+                  onToggleSound?.();
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition box-border ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+              >
+                <div className={`p-2 rounded-lg ${T.iconBg} relative`}>
+                  {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                  {!isPro && <Lock size={10} className="absolute -top-1 -right-1 opacity-70"/>}
+                </div>
+                <div className="flex-1 text-left">
+                  <p className={`text-sm font-medium ${T.text}`}>Live alert sounds</p>
+                </div>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${soundEnabled ? "text-emerald-400" : T.subText}`}>{soundEnabled ? "On" : "Off"}</span>
+              </button>
+
               <button 
                 onClick={() => {
                   setShowHistory(v => !v);
