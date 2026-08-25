@@ -1153,16 +1153,14 @@ function AppInner() {
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
         <ParticleBg theme={theme} />
         <div className="relative z-10 w-full max-w-sm px-4">
-          <div className={`rounded-3xl border shadow-2xl px-6 py-5 text-center backdrop-blur-xl ${T.loginCard}`}>
-            <div className="mx-auto w-14 h-14 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-4">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            </div>
+          <style>{`@keyframes sbDotPulse { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.5; } 40% { transform: scale(1.2); opacity: 1; } }`}</style>
+          <div className={`rounded-3xl shadow-2xl px-6 py-5 text-center backdrop-blur-xl ${T.loginCard}`}>
             <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}>Opening workspace</p>
             <p className={`text-sm mt-2 ${T.text}`}>Syncing your board and loading your session.</p>
-            <div className="mt-4 flex items-center justify-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse [animation-delay:120ms]" />
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse [animation-delay:240ms]" />
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "160ms" }} />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "320ms" }} />
             </div>
           </div>
         </div>
@@ -1394,18 +1392,16 @@ function AppInner() {
                     </button>
                   </div>
                 ) : (
-                  workspaceStepLoading ? (
+                    workspaceStepLoading ? (
                     <div className="flex items-center justify-center py-10">
-                      <div className={`rounded-3xl border shadow-2xl px-6 py-5 text-center backdrop-blur-xl w-full max-w-sm ${T.loginCard}`}>
-                        <div className="mx-auto w-14 h-14 rounded-2xl border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-4">
-                          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}> Preparing work space</p>
+                      <style>{`@keyframes sbDotPulse { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.5; } 40% { transform: scale(1.2); opacity: 1; } }`}</style>
+                      <div className={`rounded-3xl shadow-2xl px-6 py-5 text-center backdrop-blur-xl w-full max-w-sm ${T.loginCard}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.32em] ${T.label}`}> Preparing work space </p>
                         <p className={`text-sm mt-2 ${T.text}`}>Loading the workspace form…</p>
-                        <div className="mt-4 flex items-center justify-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse [animation-delay:120ms]" />
-                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse [animation-delay:240ms]" />
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "160ms" }} />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" style={{ animation: "sbDotPulse 1.2s ease-in-out infinite", animationDelay: "320ms" }} />
                         </div>
                       </div>
                     </div>
