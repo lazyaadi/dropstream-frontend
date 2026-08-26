@@ -124,9 +124,9 @@ const validateWorkspaceName = (n) => {
   return null;
 };
 
-const validatePin = (p) => {
-  if (!p?.trim()) return "PIN is required.";
-  if (p.trim().length < 6) return "PIN must be 6 digits.";
+const validatePin = (p, isCreating) => {
+  if (!p?.trim()) return "Password is required.";
+  if (isCreating && p.trim().length < 8) return "Password must be at least 8 characters.";
   return null;
 };
 
@@ -284,6 +284,11 @@ function AppInner() {
     setTheme(t => { const n = t === "dark" ? "light" : "dark"; localStorage.setItem(THEME_KEY, n); return n; });
   }, []);
 
+  useEffect(() => {
+    document.documentElement.style.colorScheme = theme;
+    document.body.style.backgroundColor = theme === "dark" ? "#080c14" : "#f9fafb";
+  }, [theme]);
+
   const [userName, setUserName]       = useState("");
   const [workspaceDisplayName, setWorkspaceDisplayName] = useState("");
   const [userEmail, setUserEmail]     = useState("");
@@ -439,7 +444,9 @@ function AppInner() {
   const [actionBanner, setActionBanner]     = useState(null);
   const [liveAction, setLiveAction]         = useState(null);
   const [wsErrorType, setWsErrorType]       = useState(null);
+   const [handleStatus, setHandleStatus]     = useState(null);
   const [wsErrorName, setWsErrorName]       = useState("");
+  const [wsUnlockAt, setWsUnlockAt]         = useState(null);
 
   const isProRef    = useRef(isPro);
   const effectiveIsProRef = useRef(isPro);
@@ -965,9 +972,9 @@ function AppInner() {
     if (!authReady) return setError("Please sign in first.");
     const nameErr = validateWorkspaceName(workspaceName);
     if (nameErr) return setError(nameErr);
-    const pinErr = validatePin(wsPin);
-    if (pinErr) return setError(pinErr);
     const isCreating = view === "create";
+    const pinErr = validatePin(wsPin, isCreating);
+    if (pinErr) return setError(pinErr);
     if (isCreating && !projectName.trim()) return setError("Project title is required.");
     const customName = userName.trim();
     localStorage.setItem("sb_user_name", customName);
@@ -981,6 +988,27 @@ function AppInner() {
       email: userEmail, isCreating,
     });
   }, [authReady, workspaceName, wsPin, view, projectName, userName, userEmail]);
+
+  useEffect(() => {
+    if (view !== "create" || workspaceName.length < 3) {
+      setHandleStatus(null);
+      return;
+    }
+    setHandleStatus("checking");
+    const t = setTimeout(() => {
+      socket.emit("check_workspace_handle", { workspaceName: workspaceName.toLowerCase() });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [workspaceName, view]);
+
+  useEffect(() => {
+    const onHandleStatus = ({ workspaceName: name, taken }) => {
+      if (name !== workspaceName.toLowerCase()) return;
+      setHandleStatus(taken ? "taken" : "available");
+    };
+    socket.on("workspace_handle_status", onHandleStatus);
+    return () => socket.off("workspace_handle_status", onHandleStatus);
+  }, [workspaceName]);
 
   const handleLeave = () => {
     localStorage.removeItem(SESSION_KEY);
@@ -1194,7 +1222,7 @@ function AppInner() {
 
         <AnimatePresence>
           {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => { setError(""); setView("start"); setWorkspaceName(""); setWsPin(""); }} />}
-          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} theme={theme} onClose={() => { setWsErrorType(null); setView("start"); setWsPin(""); setWorkspaceName(""); }} />}
+          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setView("start"); setWsPin(""); setWorkspaceName(""); }} />}
           {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
           {showContact && (
             <ContactModal
@@ -1414,9 +1442,22 @@ function AppInner() {
                         className={`w-full p-3.5 rounded-xl border font-mono tracking-wider outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
                         value={workspaceName} onChange={e => setWorkspaceName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                       />
+                      {view === "create" && workspaceName.length >= 3 && (
+                        <p className={`text-[9px] mt-1.5 font-bold ${
+                          handleStatus === "taken" ? "text-red-500" : handleStatus === "available" ? "text-emerald-500" : T.label
+                        }`}>
+                          {handleStatus === "checking" ? "Checking availability…" : handleStatus === "taken" ? "This handle is already taken." : handleStatus === "available" ? "Handle is available." : ""}
+                        </p>
+                      )}
                     </div>
                     <div className="mb-5">
-                      <PinInput label="6-Digit Workspace PIN" hint={view === "create" ? "Set a 6-digit PIN — share only with your team." : "Ask your workspace admin for the PIN."} value={wsPin} onChange={setWsPin} onEnter={handleAction} theme={theme} />
+                      <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1.5 block`}>{view === "create" ? "Create Workspace Password" : "Workspace Password"}</label>
+                      <p className={`text-[9px] ${T.label} mb-2`}>{view === "create" ? "At least 8 characters — share only with your team." : "Ask your workspace admin for the password."}</p>
+                      <input type="password" autoComplete="off" placeholder="Enter password"
+                        className={`w-full p-3.5 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                        value={wsPin} onChange={e => setWsPin(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") handleAction(); }}
+                      />
                     </div>
                     {view === "create" && (
                       <div className="mt-1">
@@ -1579,6 +1620,7 @@ function AppInner() {
           setShowOnlineUsers={setShowOnlineUsers}
           onOpenProModal={openUpgradeProModal}
           handleLeave={handleLeave}
+          onDeleteWorkspace={handleDeleteWorkspace}
           setIsMenuOpen={setShowMobileMenu}
           soundEnabled={soundEnabled}
           onToggleSound={() => setSoundEnabled(v => !v)}

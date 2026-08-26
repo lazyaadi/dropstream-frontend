@@ -101,18 +101,18 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
           </div>
         </div>
       ) : (
-        <div className="space-y-1.5 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           {(!history || history.length === 0) && <p className={`text-[10px] ${T.label} text-center py-4`}>No actions yet</p>}
           {(history || []).map((h, i) => {
             const { ic, color } = icon(h.action);
             return (
               <div
                 key={i}
-                className={`flex gap-2 p-2 rounded-xl ${T.historyBg} border`}
+                className={`flex gap-1.5 px-2 py-1.5 rounded-lg ${T.historyBg} border`}
               >
                 <span className={`${color} shrink-0 mt-0.5`}>{ic}</span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-[9px] sm:text-[10px] font-medium ${T.text} break-words leading-relaxed`}>
+                  <p className={`text-[9px] sm:text-[10px] font-medium ${T.text} break-words leading-snug`}>
                     <span className={h.userRole === "admin" ? "text-purple-500 font-medium" : "text-blue-500 font-medium"}>{h.userName}</span>{" "}
                     {renderAction(h.action)}
                   </p>

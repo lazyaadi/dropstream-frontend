@@ -1,5 +1,5 @@
 import React from "react";
-import { X, History, Users, Moon, LogOut, ChevronRight, Volume2, VolumeX, Lock } from "lucide-react";
+import { X, History, Users, Moon, LogOut, ChevronRight, Volume2, VolumeX, Lock , Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MobileMenu = ({
@@ -22,6 +22,7 @@ const MobileMenu = ({
   handleLeave,
   setIsMenuOpen,
   soundEnabled,
+  onDeleteWorkspace,
   onToggleSound,
 }) => {
   const T = theme === "light" ? {
@@ -249,6 +250,16 @@ const MobileMenu = ({
             </div>
           </div>
 
+          {role === "admin" && (
+            <button
+              onClick={() => { setIsMenuOpen(false); onDeleteWorkspace?.(); }}
+              className={`w-full flex items-center gap-3 p-3 mt-4 rounded-lg transition ${theme === "light" ? "hover:bg-red-50" : "hover:bg-red-500/10"}`}
+            >
+              <div className={`p-2 rounded-lg ${T.iconBg} text-red-500`}><Trash2 size={20} /></div>
+              <p className="font-bold text-red-500">Delete workspace</p>
+              <ChevronRight size={20} className="ml-auto text-red-500" />
+            </button>
+          )}
           <button onClick={handleLeave} className={`w-full flex items-center gap-3 p-3 mt-4 rounded-lg transition ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}>
             <div className={`p-2 rounded-lg ${T.iconBg} text-red-500`}><LogOut size={20} /></div>
             <p className="font-bold text-red-500">Log out</p>
