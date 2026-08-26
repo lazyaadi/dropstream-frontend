@@ -32,7 +32,7 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
       </div>
 
       <div ref={setNodeRef}
-        className={`rounded-2xl p-3 flex-1 min-h-95 sm:min-h-125 border-2 transition-all duration-200 backdrop-blur-none md:backdrop-blur-sm ${isOver ? `${thisCol.ring} shadow-lg` : T.colBg}`}
+        className={`rounded-2xl p-3 flex-1 min-h-95 sm:min-h-125 border-2 transition-all duration-200 backdrop-blur-none md:backdrop-blur-sm ${isOver ? `${thisCol.ring} shadow-lg` : `${T.colBg} max-sm:${thisCol.mobileBorder}`}`}
       >
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {isLoading ? (
@@ -43,7 +43,7 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
             </>
           ) : (
             tasks.map(t => (
-              <div key={t.id} className="mb-4 last:mb-0">
+              <div key={t.id} className="mb-5 sm:mb-6 last:mb-0">
                 <TaskCard task={t} onDelete={onDelete} role={role} isPro={isPro} theme={theme} onUpgrade={onUpgrade} />
               </div>
             ))

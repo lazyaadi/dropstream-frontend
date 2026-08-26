@@ -1399,24 +1399,41 @@ function AppInner() {
                       <div className="flex-1 h-px bg-current" />
                     </div>
 
-                    <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 ${theme === "light" ? "bg-emerald-50/50 border-emerald-300" : "bg-emerald-500/10 border-emerald-500/30"}`}>
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <div className={`flex items-center gap-3 p-3.5 rounded-2xl border ${theme === "light" ? "bg-white border-gray-200 shadow-sm" : "bg-slate-800/50 border-slate-700/50"}`}>
+                      <div className="relative shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white">
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 ${theme === "light" ? "border-white" : "border-slate-800"}`} />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${theme === "light" ? "text-slate-700" : "text-slate-200"}`}>{userName}</p>
-                        <p className={`text-xs font-normal ${theme === "light" ? "text-slate-500" : "text-slate-400"}`}>Logged in</p>
+                        <p className={`text-sm font-semibold truncate ${theme === "light" ? "text-gray-800" : "text-slate-100"}`}>{userName}</p>
+                        <p className={`text-[11px] font-medium ${theme === "light" ? "text-emerald-600" : "text-emerald-400"}`}>Online</p>
                       </div>
                       <button onClick={() => { setAuthReady(false); setAuthError(""); setAuthStep("name"); }}
-                        className={`text-xs font-normal px-3 py-1.5 rounded-lg transition cursor-pointer shrink-0 ${theme === "light" ? "bg-emerald-200/40 text-slate-500 hover:bg-emerald-200/70" : "bg-emerald-500/15 text-slate-400 hover:bg-emerald-500/25"}`}>Switch User</button>
+                        className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition cursor-pointer shrink-0 ${theme === "light" ? "border-gray-300 text-gray-600 hover:bg-gray-50" : "border-slate-600 text-slate-300 hover:bg-slate-700/60"}`}>Switch</button>
                     </div>
 
                     <button onClick={() => setShowProModal(true)}
-                      className={`w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl font-semibold text-xs uppercase tracking-[0.18em] transition-all active:scale-95 cursor-pointer mt-4
-                        ${isPro
-                          ? `${theme === "light" ? "bg-amber-100 border-2 border-amber-400 text-amber-700" : "bg-amber-500/15 border-2 border-amber-500/50 text-amber-400"}`
-                          : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 text-white shadow-lg shadow-amber-500/30" : "from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/40"}`
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all active:scale-95 cursor-pointer mt-4 border
+                        ${effectiveIsPro
+                          ? `${theme === "light" ? "bg-white border-amber-300 shadow-sm" : "bg-slate-800/50 border-amber-500/30"}`
+                          : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 border-amber-400 shadow-lg shadow-amber-500/25" : "from-amber-500 to-amber-600 border-amber-500/50 shadow-lg shadow-amber-500/30"}`
                         }`}
                     >
-                      <span>{effectiveIsPro ? "Pro Activated" : "Upgrade to Pro"}</span>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${effectiveIsPro ? (theme === "light" ? "bg-amber-100" : "bg-amber-500/20") : "bg-white/20"}`}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={effectiveIsPro ? (theme === "light" ? "text-amber-600" : "text-amber-400") : "text-white"}>
+                          <path d="M12 2l2.9 6.26L21 9.27l-4.5 4.39L17.8 21 12 17.77 6.2 21l1.3-7.34L3 9.27l6.1-1.01L12 2z"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className={`text-xs font-black uppercase tracking-widest ${effectiveIsPro ? (theme === "light" ? "text-amber-700" : "text-amber-400") : "text-white"}`}>
+                          {effectiveIsPro ? "Pro Active" : "Upgrade to Pro"}
+                        </p>
+                        <p className={`text-[10px] font-medium mt-0.5 ${effectiveIsPro ? (theme === "light" ? "text-amber-600/80" : "text-amber-300/70") : "text-white/80"}`}>
+                          {effectiveIsPro ? "Tap to view your plan details" : "Unlock history, team insights & more"}
+                        </p>
+                      </div>
                     </button>
                   </div>
                 ) : (
