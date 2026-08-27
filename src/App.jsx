@@ -302,6 +302,8 @@ function AppInner() {
 
   const [workspaceName, setWorkspaceName] = useState("");
   const [wsPin, setWsPin]               = useState("");
+  const [wsPinConfirm, setWsPinConfirm] = useState("");
+  const [showWsPin, setShowWsPin]       = useState(false);
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
   const [workspaceStepLoading, setWorkspaceStepLoading] = useState(false);
@@ -865,6 +867,16 @@ function AppInner() {
       }
     });
 
+    socket.on("join_locked_out", ({ unlockAt } = {}) => {
+      setAutoJoining(false);
+      setWorkspaceStepLoading(false);
+      setBoardHydrating(false);
+      localStorage.removeItem(SESSION_KEY); localStorage.removeItem(WORKSPACE_SESSION_KEY);
+      setWsErrorName(workspaceName);
+      setWsUnlockAt(unlockAt);
+      setWsErrorType("lockedOut");
+    });
+
     socket.on("permission_denied", (msg) => addToast(msg || "Permission denied", "warn"));
 
     socket.on("kicked", (msg) => {
@@ -975,6 +987,7 @@ function AppInner() {
     const isCreating = view === "create";
     const pinErr = validatePin(wsPin, isCreating);
     if (pinErr) return setError(pinErr);
+    if (isCreating && wsPin !== wsPinConfirm) return setError("Passwords do not match.");
     if (isCreating && !projectName.trim()) return setError("Project title is required.");
     const customName = userName.trim();
     localStorage.setItem("sb_user_name", customName);
@@ -1039,6 +1052,7 @@ function AppInner() {
     setIsJoined(false);
     setWorkspaceName("");
     setWsPin("");
+    setWsPinConfirm("");
     setProjectName("");
     setError("");
     setWsErrorType(null);
@@ -1222,7 +1236,7 @@ function AppInner() {
 
         <AnimatePresence>
           {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => { setError(""); setView("start"); setWorkspaceName(""); setWsPin(""); }} />}
-          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setView("start"); setWsPin(""); setWorkspaceName(""); }} />}
+          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setView("start"); setWsPin(""); setWsPinConfirm(""); setWorkspaceName(""); }} />}
           {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
           {showContact && (
             <ContactModal
@@ -1255,27 +1269,8 @@ function AppInner() {
               <p className={`text-[10px] ${T.label} uppercase tracking-[0.45em] mt-1 font-black`}>Team Task Manager</p>
             </div>
 
-            {isPro && (
-              <div className="flex flex-col gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Pro Active</p>
-                  <button onClick={() => {
-                    clearPersistedProState(userEmail);
-                    setIsPro(false);
-                    setProExpiresAt(null);
-                    socket.emit("deactivate_pro", { email: userEmail });
-                  }}
-                    className={`ml-auto text-[9px] font-normal ${theme === "light" ? "text-slate-500" : "text-slate-400"} hover:text-red-500 transition cursor-pointer`}>Deactivate</button>
-                </div>
-                {proExpiryLabel && (
-                  <div className="flex items-center gap-2 text-[9px] font-black text-amber-500">
-                    <span className="ml-4 px-2 py-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 uppercase tracking-widest">Reminder</span>
-                    <span>Remainder: Pro expires on {proExpiryLabel}</span>
-                  </div>
-                )}
-              </div>
-            )}
+
+           
 
             {!authReady && authStep === "name" && (
               <div className="space-y-4">
@@ -1421,11 +1416,6 @@ function AppInner() {
                           : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 border-amber-400 shadow-lg shadow-amber-500/25" : "from-amber-500 to-amber-600 border-amber-500/50 shadow-lg shadow-amber-500/30"}`
                         }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${effectiveIsPro ? (theme === "light" ? "bg-amber-100" : "bg-amber-500/20") : "bg-white/20"}`}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={effectiveIsPro ? (theme === "light" ? "text-amber-600" : "text-amber-400") : "text-white"}>
-                          <path d="M12 2l2.9 6.26L21 9.27l-4.5 4.39L17.8 21 12 17.77 6.2 21l1.3-7.34L3 9.27l6.1-1.01L12 2z"/>
-                        </svg>
-                      </div>
                       <div className="flex-1 text-left">
                         <p className={`text-xs font-black uppercase tracking-widest ${effectiveIsPro ? (theme === "light" ? "text-amber-700" : "text-amber-400") : "text-white"}`}>
                           {effectiveIsPro ? "Pro Active" : "Upgrade to Pro"}
@@ -1470,12 +1460,39 @@ function AppInner() {
                     <div className="mb-5">
                       <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1.5 block`}>{view === "create" ? "Create Workspace Password" : "Workspace Password"}</label>
                       <p className={`text-[9px] ${T.label} mb-2`}>{view === "create" ? "At least 8 characters — share only with your team." : "Ask your workspace admin for the password."}</p>
-                      <input type="password" autoComplete="off" placeholder="Enter password"
-                        className={`w-full p-3.5 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
-                        value={wsPin} onChange={e => setWsPin(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter") handleAction(); }}
-                      />
+                      <div className="relative">
+                        <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Enter password"
+                          className={`w-full p-3.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                          value={wsPin} onChange={e => setWsPin(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter" && view !== "create") handleAction(); }}
+                        />
+                        <button type="button" onClick={() => setShowWsPin(v => !v)}
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition cursor-pointer`}>
+                          {showWsPin ? "Hide" : "View"}
+                        </button>
+                      </div>
                     </div>
+                    {view === "create" && (
+                      <div className="mb-5">
+                        <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1.5 block`}>Re-enter Password</label>
+                        <div className="relative">
+                          <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Confirm password"
+                            className={`w-full p-3.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                            value={wsPinConfirm} onChange={e => setWsPinConfirm(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") handleAction(); }}
+                          />
+                          <button type="button" onClick={() => setShowWsPin(v => !v)}
+                            className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition cursor-pointer`}>
+                            {showWsPin ? "Hide" : "View"}
+                          </button>
+                        </div>
+                        {wsPinConfirm && (
+                          <p className={`text-[9px] mt-1.5 font-bold ${wsPin === wsPinConfirm ? "text-emerald-500" : "text-red-500"}`}>
+                            {wsPin === wsPinConfirm ? "Passwords match." : "Passwords do not match."}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {view === "create" && (
                       <div className="mt-1">
                         <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-3 block`}>Project Title</label>

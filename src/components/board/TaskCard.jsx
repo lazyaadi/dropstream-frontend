@@ -110,9 +110,9 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
 
         <div className={`mt-2 border-b ${theme === "light" ? "border-gray-200" : "border-slate-700/50"}`} />
 
-        <p className={`mt-2 text-[11px] sm:text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}>{task.title}</p>
+        <p className={`mt-2 text-[11px] sm:text-sm font-medium leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}>{task.title}</p>
         {task.description ? (
-          <p className={`text-[10px] sm:text-xs mt-1.5 leading-relaxed line-clamp-3 ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
+          <p className={`text-[10px] sm:text-xs mt-1.5 leading-relaxed whitespace-pre-wrap break-words ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
             {task.description}
           </p>
         ) : (
@@ -202,10 +202,10 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
             <div className="flex items-center justify-between gap-2">
               <div className="flex flex-col gap-2 min-w-0 flex-1">
                 {isPro && task.addedBy && (
-                  <span className={`inline-flex items-center gap-2 text-[9px] font-black px-2.5 py-1 rounded-lg border w-fit whitespace-nowrap
+                  <span className={`inline-flex items-center gap-2 text-[9px] font-medium px-2.5 py-1 rounded-lg border w-fit whitespace-nowrap
                     ${theme === "light" ? "bg-gray-50 border-gray-200 text-gray-700" : "bg-slate-800/70 border-slate-700/60 text-slate-200"}`}
                   >
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold
                       ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
                     >{creatorInitials || "?"}</span>
                     <span>{task.addedBy}</span>
