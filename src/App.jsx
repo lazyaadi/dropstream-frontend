@@ -1256,7 +1256,7 @@ function AppInner() {
         </AnimatePresence>
 
         <div className={`relative z-10 w-full max-w-md`}>
-          <div className={`absolute -inset-2 ${theme === "light" ? "bg-blue-100/60" : "bg-blue-500/8"} rounded-3xl blur-2xl`} />
+          <div className={`absolute -inset-2 ${theme === "light" ? "bg-blue-100/60" : "bg-slate-800/40"} rounded-3xl blur-2xl`} />
           <div className={`relative ${T.loginCard} backdrop-blur-xl p-8 rounded-2xl border shadow-2xl`}>
 
             <div className="text-center mb-6">

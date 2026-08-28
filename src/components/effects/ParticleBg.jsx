@@ -15,7 +15,7 @@ export default function ParticleBg({ theme }) {
     const observer = new ResizeObserver(() => resize());
     observer.observe(document.body);
     window.addEventListener("resize", resize);
-    const color = theme === "light" ? "30,64,175" : "99,179,237";
+    const color = theme === "light" ? "30,64,175" : "138,144,160";
     const pts = Array.from({ length: 70 }, () => ({
       x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight,
       vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6,
