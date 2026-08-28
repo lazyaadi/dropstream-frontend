@@ -17,7 +17,29 @@
 }
 
 @theme {
-  /* This ensures Tailwind 4 knows how to handle your custom colors if needed */
+  --color-slate-50:  #F4F5F7;
+  --color-slate-100: #E7E9ED;
+  --color-slate-200: #CBCFD8;
+  --color-slate-300: #9CA3B0;
+  --color-slate-400: #8A90A0;
+  --color-slate-500: #6C7387;
+  --color-slate-600: #565C6E;
+  --color-slate-700: #232733;
+  --color-slate-800: #171A22;
+  --color-slate-900: #12141B;
+  --color-slate-950: #0B0D12;
+
+  --color-blue-50:  #EEF2FC;
+  --color-blue-100: #DCE5F8;
+  --color-blue-200: #B9CBF2;
+  --color-blue-300: #96B2EB;
+  --color-blue-400: #8AA3ED;
+  --color-blue-500: #6E9BF4;
+  --color-blue-600: #5A82D6;
+  --color-blue-700: #4A6BB3;
+  --color-blue-800: #3B5490;
+  --color-blue-900: #2C3D6D;
+  --color-blue-950: #1C2747;
 }
 
 @layer components {
