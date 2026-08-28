@@ -21,9 +21,12 @@ export const COLUMNS_LIGHT = [
 ];
 
 export const PRIORITY = {
-  low:    { label: "Low",    cls: "text-white bg-emerald-500 border-emerald-600/60", clsLight: "text-white bg-emerald-500 border-emerald-600/60" },
-  medium: { label: "Medium", cls: "text-white bg-amber-500 border-amber-600/60",     clsLight: "text-white bg-amber-500 border-amber-600/60" },
-  high:   { label: "High",   cls: "text-white bg-red-500 border-red-600/60",         clsLight: "text-white bg-red-500 border-red-600/60" },
+  low:    { label: "Low",    cls: "text-white bg-emerald-500 border-emerald-600/60", clsLight: "text-white bg-emerald-500 border-emerald-600/60",
+            pill: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", pillLight: "text-emerald-700 bg-emerald-50 border-emerald-200", bar: "bg-emerald-400" },
+  medium: { label: "Medium", cls: "text-white bg-amber-500 border-amber-600/60",     clsLight: "text-white bg-amber-500 border-amber-600/60",
+            pill: "text-amber-400 bg-amber-500/10 border-amber-500/25", pillLight: "text-amber-700 bg-amber-50 border-amber-200", bar: "bg-amber-400" },
+  high:   { label: "High",   cls: "text-white bg-red-500 border-red-600/60",         clsLight: "text-white bg-red-500 border-red-600/60",
+            pill: "text-red-400 bg-red-500/10 border-red-500/25", pillLight: "text-red-700 bg-red-50 border-red-200", bar: "bg-red-400" },
 };
 
 export const PAYMENT_METHODS = [

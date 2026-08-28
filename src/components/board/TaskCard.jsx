@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Lock, Clock, AlertTriangle, X } from "lucide-react";
+import { Lock, Clock, AlertTriangle, X, Paperclip } from "lucide-react";
 import { PRIORITY, TD, TL } from "../../lib/constants";
 import { fmtFull, obfuscateText } from "../../lib/utils";
 import DotsIcon from "../ui/DotsIcon";
@@ -75,7 +75,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         ${isOverdue ? (theme === "light" ? "border-red-300 bg-red-50 shadow-red-100" : "border-red-500/50 shadow-red-900/20 bg-red-950/20") : ""}`}
     >
       {canEdit && (
-        <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
+                  <div className={`absolute top-2.5 ${isDone ? "right-16" : "right-2.5"} flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all`}>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm backdrop-blur-sm
@@ -93,10 +93,20 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 pr-7">
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center text-[7px] sm:text-[8px] font-black px-2 py-0.5 rounded-md border ${pCls} ${isDone ? "line-through text-slate-400 opacity-75" : ""}`}>{p.label}</span>
+        {isDone && (
+          <div className="absolute top-3 right-3 flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${theme === "light" ? "bg-emerald-600" : "bg-emerald-400"}`}
+              style={{ boxShadow: theme === "light" ? "0 0 0 3px rgba(5,150,105,0.12)" : "0 0 0 3px rgba(74,222,143,0.15)" }} />
+            <span className={`text-[10px] font-medium tracking-wide ${theme === "light" ? "text-emerald-700" : "text-emerald-400"}`}
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}>DONE</span>
           </div>
+        )}
+
+        <div className={`flex items-start justify-between gap-2 ${isDone ? "pr-14" : "pr-7"}`}>
+          <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border ${theme === "light" ? p.pillLight : p.pill}`}>
+            <span className={`w-[3px] h-3 rounded-sm ${p.bar}`} />
+            {p.label}
+          </span>
           <button
             {...(canEdit ? { ...attributes, ...listeners } : {})}
             className={`shrink-0 p-1 rounded transition-colors touch-none
@@ -108,136 +118,117 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
           ><DotsIcon /></button>
         </div>
 
-        <div className={`mt-2 border-b ${theme === "light" ? "border-gray-200" : "border-slate-700/50"}`} />
+        <p className={`mt-3 text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}
+          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.005em" }}>{task.title}</p>
 
-        <p className={`mt-2 text-[11px] sm:text-sm font-medium leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}>{task.title}</p>
         {task.description ? (
-          <p className={`text-[10px] sm:text-xs mt-1.5 leading-relaxed whitespace-pre-wrap break-words ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
+          <p className={`text-xs mt-1.5 leading-relaxed whitespace-pre-wrap break-words ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
             {task.description}
           </p>
         ) : (
-          <p className={`text-[10px] sm:text-xs mt-1.5 leading-relaxed ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
+          <p className={`text-xs mt-1.5 italic ${theme === "light" ? "text-gray-400" : "text-slate-600"}`}>
             No description
           </p>
         )}
 
-        {task.dueDate ? (
-          <div className={`flex items-center gap-1 mt-1.5 text-[8px] sm:text-[9px] font-bold
-            ${isDone ? "line-through text-slate-400" : isOverdue ? "text-red-500" : isDueToday ? "text-amber-500" : T.label}`}>
-            <Clock size={8} />
-            {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-            {isDueToday && !isDone && " · Today"}
-          </div>
-        ) : (
-          <div className={`flex items-center gap-1 mt-1.5 text-[8px] sm:text-[9px] font-bold ${isDone ? "line-through text-slate-400" : T.label}`}>
-            <Clock size={8} />
-            No due date
-          </div>
-        )}
+        <div className={`flex items-center gap-1.5 mt-2.5 text-[11px] ${isDone ? "line-through text-slate-400" : isOverdue ? "text-red-500" : isDueToday ? "text-amber-500" : T.label}`}
+          style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          <Clock size={11} className="opacity-70" />
+          {task.dueDate
+            ? <>{new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}{isDueToday && !isDone && " · Today"}</>
+            : "No due date"}
+        </div>
 
         {task.image && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setShowImage(true); }}
-            className={`mt-2 mb-1 w-full rounded-lg overflow-hidden border transition cursor-zoom-in p-1
-              ${theme === "light" ? "border-gray-200 bg-white" : "border-slate-700/50 bg-slate-900/40"}`}
+            className={`mt-3 w-full rounded-xl overflow-hidden border cursor-zoom-in text-left block
+              ${theme === "light" ? "border-gray-200 bg-gray-50" : "border-slate-700/50 bg-slate-900/40"}`}
           >
-            <img src={task.image} alt="attachment" className="w-full max-h-40 object-contain" />
+            <img src={task.image} alt="attachment" className="w-full max-h-52 object-cover" />
+            <div className={`flex items-center gap-1.5 px-3 py-2 text-[10px] uppercase tracking-wider border-t ${theme === "light" ? "border-gray-200 text-gray-500" : "border-slate-700/50 text-slate-500"}`}
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+              <Paperclip size={11} className="opacity-70" />
+              1 attachment
+            </div>
           </button>
         )}
 
-        <div className={`mt-3 pt-3 pb-2 border-t border-b ${theme === "light" ? "border-gray-200" : "border-slate-700/50"}`}>
+        <div className={`mt-3.5 pt-3.5 border-t ${theme === "light" ? "border-gray-200" : "border-slate-700/50"}`}>
           {isDone ? (
-            <div className={`relative w-full rounded-lg border overflow-hidden
-              ${theme === "light" ? "border-gray-200 bg-white" : "border-slate-700/60 bg-slate-900/40"}`}
-            >
-                <div className={`relative grid grid-cols-2 gap-2 px-3 sm:px-4 py-3 min-h-23
-                  ${theme === "light" ? "border-gray-200" : "border-slate-700/60"}`}
-              >
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
-                    ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
-                  >{isPro ? (creatorInitials || "?") : obfuscateText(0, "name").charAt(0)}</span>
-                  <div className={`flex flex-col gap-1 min-w-0 flex-1 ${!isPro ? lockedMetaCls : ""}`}>
-                    <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] ${T.label}`}>Created</span>
-                    <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
-                      {isPro ? (task.addedBy || "Unknown") : obfuscateText(0, "name")}
-                    </span>
-                      <div className={`flex items-center gap-1 text-[8px] sm:text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
-                      <Clock size={9} className="shrink-0" />
-                        <span>{isPro ? (task.createdAt ? fmtCardTime(task.createdAt) : "—") : obfuscateText(1, "number")}</span>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`rounded-xl border p-3 relative overflow-hidden ${theme === "light" ? "border-gray-200 bg-gray-50" : "border-slate-700/50 bg-slate-900/40"}`}>
+                <p className={`text-[9px] uppercase tracking-widest mb-2.5 ${T.label}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Created</p>
+                <div className={`flex items-center gap-2 mb-2 ${!isPro ? lockedMetaCls : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"}`}
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {isPro ? (creatorInitials || "?") : obfuscateText(0, "name").charAt(0)}
+                  </span>
+                  <span className={`text-[11px] font-medium leading-tight truncate ${theme === "light" ? "text-gray-800" : "text-slate-100"}`}>
+                    {isPro ? (task.addedBy || "Unknown") : obfuscateText(0, "name")}
+                  </span>
                 </div>
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 ml-auto sm:ml-0 justify-self-end">
-                    <span className={`ml-0 sm:ml-12 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0
-                    ${theme === "light" ? "bg-emerald-100 text-emerald-700" : "bg-emerald-500/20 text-emerald-200"}`}
-                  >{isPro ? (completedInitials || "?") : obfuscateText(2, "name").charAt(0)}</span>
-                    <div className={`flex flex-col gap-1 min-w-0 flex-1 items-start ${!isPro ? lockedMetaCls : ""}`}>
-                    <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.22em] ${T.label}`}>Completed</span>
-                    <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
-                      {isPro ? (task.completedBy || "Unknown") : obfuscateText(2, "name")}
-                    </span>
-                      <div className={`flex items-center gap-1 text-[8px] sm:text-[9px] whitespace-nowrap ${theme === "light" ? "text-gray-700" : "text-slate-200"}`}>
-                      <Clock size={9} className="shrink-0" />
-                        <span>{isPro ? (task.completedAt ? fmtCardTime(task.completedAt) : "—") : obfuscateText(3, "number")}</span>
-                    </div>
-                  </div>
+                <div className={`flex items-center gap-1.5 text-[10px] ${T.label} ${!isPro ? lockedMetaCls : ""}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <Clock size={9} className="opacity-70 shrink-0" />
+                  <span>{isPro ? (task.createdAt ? fmtCardTime(task.createdAt) : "—") : obfuscateText(1, "number")}</span>
                 </div>
-
                 {!isPro && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => onUpgrade?.()}
-                      className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer shadow-sm"
-                    >
-                      <Lock size={10} />Pro
+                    <button type="button" onClick={() => onUpgrade?.()}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer shadow-sm">
+                      <Lock size={9} />Pro
                     </button>
                   </div>
                 )}
               </div>
+              <div className={`rounded-xl border p-3 relative overflow-hidden ${theme === "light" ? "border-gray-200 bg-gray-50" : "border-slate-700/50 bg-slate-900/40"}`}>
+                <p className={`text-[9px] uppercase tracking-widest mb-2.5 ${T.label}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Completed</p>
+                <div className={`flex items-center gap-2 mb-2 ${!isPro ? lockedMetaCls : ""}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0 ${theme === "light" ? "bg-emerald-100 text-emerald-700" : "bg-emerald-500/20 text-emerald-300"}`}
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {isPro ? (completedInitials || "?") : obfuscateText(2, "name").charAt(0)}
+                  </span>
+                  <span className={`text-[11px] font-medium leading-tight truncate ${theme === "light" ? "text-gray-800" : "text-slate-100"}`}>
+                    {isPro ? (task.completedBy || "Unknown") : obfuscateText(2, "name")}
+                  </span>
+                </div>
+                <div className={`flex items-center gap-1.5 text-[10px] ${T.label} ${!isPro ? lockedMetaCls : ""}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <Clock size={9} className="opacity-70 shrink-0" />
+                  <span>{isPro ? (task.completedAt ? fmtCardTime(task.completedAt) : "—") : obfuscateText(3, "number")}</span>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <div className="flex flex-col gap-2 min-w-0 flex-1">
-                {isPro && task.addedBy && (
-                  <span className={`inline-flex items-center gap-2 text-[9px] font-medium px-2.5 py-1 rounded-lg border w-fit whitespace-nowrap
-                    ${theme === "light" ? "bg-gray-50 border-gray-200 text-gray-700" : "bg-slate-800/70 border-slate-700/60 text-slate-200"}`}
-                  >
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold
-                      ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
-                    >{creatorInitials || "?"}</span>
-                    <span>{task.addedBy}</span>
-                  </span>
-                )}
-                {!isPro && (
-                  <div className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black blur-[3px] opacity-40
-                      ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-200"}`}
-                    >{obfuscateText(0, "name").charAt(0)}</span>
-                    <span className={`text-[9px] font-black blur-[3px] opacity-40 ${theme === "light" ? "text-gray-600" : "text-slate-300"}`}>
-                      {obfuscateText(0, "name")}
+              <div className="flex items-center gap-2 min-w-0">
+                {isPro && task.addedBy ? (
+                  <>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"}`}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                      {creatorInitials || "?"}
                     </span>
+                    <span className={`text-[11px] font-medium truncate ${theme === "light" ? "text-gray-800" : "text-slate-100"}`}>{task.addedBy}</span>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 blur-[3px] opacity-40 select-none pointer-events-none">
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300"}`}>{obfuscateText(0, "name").charAt(0)}</span>
+                    <span className={`text-[11px] font-medium ${theme === "light" ? "text-gray-800" : "text-slate-100"}`}>{obfuscateText(0, "name")}</span>
                   </div>
                 )}
               </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                {isPro && task.createdAt && (
-                  <div className={`flex items-center gap-1 text-[9px] ${T.label} leading-none self-center`}>
-                    <Clock size={9} />
+              <div className="shrink-0">
+                {isPro && task.createdAt ? (
+                  <div className={`flex items-center gap-1.5 text-[10px] ${T.label}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <Clock size={10} className="opacity-70" />
                     <span>{fmtFull(task.createdAt)}</span>
                   </div>
-                )}
-                {!isPro && (
-                  <button
-                    type="button"
-                    onClick={() => onUpgrade?.()}
-                    className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer"
-                  >
+                ) : !isPro ? (
+                  <button type="button" onClick={() => onUpgrade?.()}
+                    className="flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/25 transition cursor-pointer">
                     <Lock size={10} />Pro
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           )}

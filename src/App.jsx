@@ -286,7 +286,7 @@ function AppInner() {
 
   useEffect(() => {
     document.documentElement.style.colorScheme = theme;
-    document.body.style.backgroundColor = theme === "dark" ? "#080c14" : "#f9fafb";
+    document.body.style.backgroundColor = theme === "dark" ? "#0B0D12" : "#f9fafb";
   }, [theme]);
 
   const [userName, setUserName]       = useState("");
@@ -1274,17 +1274,19 @@ function AppInner() {
 
             {!authReady && authStep === "name" && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white ${theme === "light" ? "bg-blue-600" : "bg-blue-500"}`}>1</div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-500/15 text-blue-400"}`}
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}>1</div>
                   <div>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Your Name</p>
-                    <p className={`text-[9px] ${T.label}`}>What should we call you?</p>
+                    <p className={`text-[13px] font-semibold uppercase tracking-wide ${T.text}`}>Your Name</p>
+                    <p className={`text-[11px] ${T.label} mt-0.5`}>What should we call you?</p>
                   </div>
                 </div>
                 <div>
-                  <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-2 block`}>Full Name</label>
-                  <input type="text" autoComplete="name" placeholder="e.g. Ahmed Khan" autoFocus
-                    className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                  <label className={`text-[10px] font-semibold ${T.label} uppercase tracking-widest mb-2 block`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Full Name</label>
+                  <input type="text" autoComplete="name" placeholder="Enter your name" autoFocus
+                    className={`w-full p-3.5 rounded-xl border border-blue-500 outline-none transition-all text-sm ${theme === "light" ? "bg-white text-gray-800" : "bg-slate-800/80 text-slate-100"} placeholder:text-slate-500`}
+                    style={{ boxShadow: "0 0 0 3px rgba(110,155,244,0.14)" }}
                     value={userName} onChange={e => { setUserName(e.target.value); setAuthError(""); }}
                     onKeyDown={e => e.key === "Enter" && handleNameNext()}
                   />
@@ -1296,39 +1298,40 @@ function AppInner() {
                   </div>
                 )}
                 <button onClick={handleNameNext} disabled={authLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30">
-                  Continue →
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3.5 rounded-full font-bold text-[13px] uppercase tracking-wide transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+                  Continue<span aria-hidden="true">→</span>
                 </button>
               </div>
             )}
 
             {!authReady && authStep === "email" && (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white ${theme === "light" ? "bg-blue-600" : "bg-blue-500"}`}>2</div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-500/15 text-blue-400"}`}
+                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}>2</div>
                   <div>
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${theme === "light" ? "text-blue-600" : "text-blue-400"}`}>Login</p>
-                    <p className={`text-[9px] ${T.label}`}>Enter your credentials to access SyncBoard</p>
+                    <p className={`text-[13px] font-semibold uppercase tracking-wide ${T.text}`}>Login</p>
+                    <p className={`text-[11px] ${T.label} mt-0.5`}>Enter your credentials to access SyncBoard</p>
                   </div>
                 </div>
                 <div>
-                  <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-2 block`}>Email Address</label>
+                  <label className={`text-[10px] font-semibold ${T.label} uppercase tracking-widest mb-2 block`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Email Address</label>
                   <input type="email" autoComplete="email" placeholder="e.g. ahmed@gmail.com" autoFocus
-                    className={`w-full p-3 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                    className={`w-full p-3.5 rounded-xl border outline-none transition-all text-sm ${theme === "light" ? "bg-white border-gray-300 text-gray-800 focus:border-blue-500" : "bg-slate-800/80 border-slate-700 text-slate-100 focus:border-blue-500"} placeholder:text-slate-500`}
                     value={userEmail} onChange={e => { setUserEmail(e.target.value); setAuthError(""); }}
                     onKeyDown={e => e.key === "Enter" && handleAuth()}
                   />
                 </div>
                 <div>
-                  <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-2 block`}>Password</label>
+                  <label className={`text-[10px] font-semibold ${T.label} uppercase tracking-widest mb-2 block`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Password</label>
                   <div className="relative">
                     <input type={showPass ? "text" : "password"} autoComplete="current-password" placeholder="Your password"
-                      className={`w-full p-3 pr-10 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                      className={`w-full p-3.5 pr-11 rounded-xl border outline-none transition-all text-sm ${theme === "light" ? "bg-white border-gray-300 text-gray-800 focus:border-blue-500" : "bg-slate-800/80 border-slate-700 text-slate-100 focus:border-blue-500"} placeholder:text-slate-500`}
                       value={userPassword} onChange={e => { setUserPassword(e.target.value); setAuthError(""); }}
                       onKeyDown={e => e.key === "Enter" && handleAuth()}
                     />
                     <button type="button" onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition cursor-pointer">
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition cursor-pointer">
                       {showPass ? <Eye size={16}/> : <Eye size={16} className="opacity-50"/>}
                     </button>
                   </div>
@@ -1340,17 +1343,18 @@ function AppInner() {
                   </div>
                 )}
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); setAuthMethod("password"); }}
-                  className={`inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-lg border transition cursor-pointer ${theme === "light" ? "text-gray-600 border-gray-200 bg-gray-50 hover:bg-gray-100" : "text-slate-300 border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}>
+                  className={`inline-flex items-center gap-2 text-[11px] font-medium px-3 py-2 rounded-lg border transition cursor-pointer ${theme === "light" ? "text-gray-600 border-gray-200 bg-gray-50 hover:bg-gray-100" : "text-slate-300 border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                   <ArrowLeft size={12} />
                   Back
                 </button>
                 <button onClick={handleAuth} disabled={authLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30">
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3.5 rounded-xl font-bold text-[13px] uppercase tracking-wide transition-all active:scale-95 cursor-pointer">
                   {authLoading ? "Loading…" : "Login"}
                 </button>
                 <div className={`flex items-center gap-3 py-1 ${theme === "light" ? "text-gray-300" : "text-slate-700"}`}>
                   <div className="flex-1 h-px bg-current opacity-50" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-70">or</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>or</span>
                   <div className="flex-1 h-px bg-current opacity-50" />
                 </div>
                 <div
@@ -1358,7 +1362,8 @@ function AppInner() {
                   className="w-full overflow-hidden"
                 />
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
-                  className={`w-full text-[9px] font-black uppercase tracking-widest p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}>
+                  className={`w-full text-[11px] font-medium p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}
+                  style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                   ← Back
                 </button>
               </div>
@@ -1523,14 +1528,14 @@ function AppInner() {
               </div>
             )}
 
-            <div className={`mt-8 pt-4 border-t ${T.divider} flex items-center justify-between`}>
+            <div className={`mt-7 pt-4 border-t ${T.divider} flex items-center justify-between`}>
               <button onClick={() => setShowAbout(true)}
-                className={`loop-bob inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[9px] font-semibold uppercase tracking-widest transition cursor-pointer ${theme === "light" ? "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100" : "border-slate-700/80 bg-slate-800/70 text-blue-300 hover:border-blue-500/40 hover:bg-slate-800"}`}>
-                <Info size={11}/>How it works
+                className={`loop-bob inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-medium transition cursor-pointer ${theme === "light" ? "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100" : "border-slate-700/80 bg-slate-800/70 text-slate-300 hover:bg-slate-800"}`}>
+                <Info size={13} className="opacity-70"/>How it works
               </button>
               <button onClick={() => setShowContact(true)}
-                className={`text-[9px] font-semibold uppercase tracking-widest ${T.label} hover:text-blue-500 transition flex items-center gap-1 cursor-pointer`}>
-                <Shield size={11}/>Questions?
+                className={`text-[11px] font-normal ${T.label} hover:text-blue-500 transition flex items-center gap-1.5 cursor-pointer`}>
+                <Shield size={13} className="opacity-70"/>Questions?
               </button>
             </div>
           </div>
@@ -1663,7 +1668,7 @@ function AppInner() {
 
       <QuotaBanner userTaskCount={userTaskCount} limit={limit} userResetDate={userResetDate}  isPro={effectiveIsPro} onUpgrade={() => setShowProModal(true)} theme={theme} />
 
-      <main className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-8">
+      <main className="relative z-10 w-full px-3 sm:px-6 md:px-8 py-5 sm:py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
