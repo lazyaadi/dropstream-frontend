@@ -14,6 +14,11 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
   const pCls = theme === "light" ? p.clsLight : p.cls;
   const canEdit = role === "member" || role === "admin";
   const isDone = task.status === "done";
+  const statusMeta = isDone
+    ? { label: "DONE", color: theme === "light" ? "text-emerald-700" : "text-emerald-400", dot: theme === "light" ? "bg-emerald-600" : "bg-emerald-400", shadow: theme === "light" ? "0 0 0 3px rgba(5,150,105,0.12)" : "0 0 0 3px rgba(74,222,143,0.15)" }
+    : task.status === "in-progress"
+      ? { label: "IN PROGRESS", color: theme === "light" ? "text-amber-700" : "text-amber-400", dot: theme === "light" ? "bg-amber-600" : "bg-amber-400", shadow: theme === "light" ? "0 0 0 3px rgba(180,83,9,0.12)" : "0 0 0 3px rgba(217,164,65,0.15)" }
+      : { label: "TO DO", color: theme === "light" ? "text-red-700" : "text-red-400", dot: theme === "light" ? "bg-red-600" : "bg-red-400", shadow: theme === "light" ? "0 0 0 3px rgba(220,38,38,0.12)" : "0 0 0 3px rgba(240,87,107,0.15)" };
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "done";
   const [showImage, setShowImage] = useState(false);
   const isDueToday = task.dueDate && !isOverdue && (() => {
@@ -75,7 +80,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         ${isOverdue ? (theme === "light" ? "border-red-300 bg-red-50 shadow-red-100" : "border-red-500/50 shadow-red-900/20 bg-red-950/20") : ""}`}
     >
       {canEdit && (
-                  <div className={`absolute top-2.5 ${isDone ? "right-16" : "right-2.5"} flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all`}>
+                  <div className={`absolute top-2.5 right-2.5 ${isDone ? "sm:right-16" : ""} flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all`}>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm backdrop-blur-sm
@@ -94,15 +99,14 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
       )}
       <div className="flex-1 min-w-0">
         {isDone && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${theme === "light" ? "bg-emerald-600" : "bg-emerald-400"}`}
-              style={{ boxShadow: theme === "light" ? "0 0 0 3px rgba(5,150,105,0.12)" : "0 0 0 3px rgba(74,222,143,0.15)" }} />
-            <span className={`text-[10px] font-medium tracking-wide ${theme === "light" ? "text-emerald-700" : "text-emerald-400"}`}
-              style={{ fontFamily: "'IBM Plex Mono', monospace" }}>DONE</span>
+          <div className="absolute top-3 right-3 hidden sm:flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} style={{ boxShadow: statusMeta.shadow }} />
+            <span className={`text-[10px] font-medium tracking-wide ${statusMeta.color}`}
+              style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{statusMeta.label}</span>
           </div>
         )}
 
-        <div className={`flex items-start justify-between gap-2 ${isDone ? "pr-14" : "pr-7"}`}>
+        <div className={`flex items-start justify-between gap-2 ${isDone ? "sm:pr-14" : ""} pr-7`}>
           <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border ${theme === "light" ? p.pillLight : p.pill}`}>
             <span className={`w-[3px] h-3 rounded-sm ${p.bar}`} />
             {p.label}
@@ -116,6 +120,12 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
             disabled={!canEdit}
             aria-label="Drag task"
           ><DotsIcon /></button>
+        </div>
+
+        <div className="flex sm:hidden items-center gap-1.5 mt-2.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} style={{ boxShadow: statusMeta.shadow }} />
+          <span className={`text-[10px] font-medium tracking-wide ${statusMeta.color}`}
+            style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{statusMeta.label}</span>
         </div>
 
         <p className={`mt-3 text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}

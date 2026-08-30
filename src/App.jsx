@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, Info, Shield,
+  Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, EyeOff, Info, Shield,
   Search, Lock,
 } from "lucide-react";
 
@@ -935,11 +935,12 @@ function AppInner() {
 
         if (googleButtonRef.current) {
           googleButtonRef.current.innerHTML = "";
+          const btnWidth = Math.floor(googleButtonRef.current.offsetWidth) || 300;
           window.google.accounts.id.renderButton(googleButtonRef.current, {
             theme: "filled_blue",
             size: "large",
             shape: "rectangular",
-            width: "100%",
+            width: btnWidth,
             locale: "en",
           });
         }
@@ -1137,7 +1138,7 @@ function AppInner() {
       completedAt: null,
       completedBy: null,
     };
-    const updated = [...tasks, newTask];
+    const updated = [newTask, ...tasks];
     setTasks(updated);
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
@@ -1359,7 +1360,7 @@ function AppInner() {
                 </div>
                 <div
                   ref={googleButtonRef}
-                  className="w-full overflow-hidden"
+                  className="w-full overflow-hidden flex justify-center"
                 />
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
                   className={`w-full text-[11px] font-medium p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}
@@ -1383,7 +1384,8 @@ function AppInner() {
 
                     <div className="flex gap-3 mt-6">
                       <button onClick={() => openWorkspaceStep("create")}
-                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
+                        style={{ background: "linear-gradient(to bottom right, #5A82D6, #4A6BB3)" }}
+                        className="flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border border-blue-500/25 font-semibold text-sm text-white transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-500/30">
                         <Plus size={18}/><span>New Workspace</span>
                       </button>
                       <button onClick={() => openWorkspaceStep("join")}
@@ -1423,12 +1425,26 @@ function AppInner() {
                     >
                       <div className="flex-1 text-left">
                         <p className={`text-xs font-black uppercase tracking-widest ${effectiveIsPro ? (theme === "light" ? "text-amber-700" : "text-amber-400") : "text-white"}`}>
-                          {effectiveIsPro ? "Pro Active" : "Upgrade to Pro"}
+                          {effectiveIsPro ? "Pro Active" : "Activate Pro"}
                         </p>
                         <p className={`text-[10px] font-medium mt-0.5 ${effectiveIsPro ? (theme === "light" ? "text-amber-600/80" : "text-amber-300/70") : "text-white/80"}`}>
                           {effectiveIsPro ? "Tap to view your plan details" : "Unlock history, team insights & more"}
                         </p>
                       </div>
+                      {effectiveIsPro && (
+                        <span
+                          role="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearPersistedProState(userEmail);
+                            setIsPro(false);
+                            setProExpiresAt(null);
+                            socket.emit("deactivate_pro", { email: userEmail });
+                          }}
+                          className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg border transition cursor-pointer ${theme === "light" ? "border-amber-300 text-amber-700 hover:bg-amber-50" : "border-amber-500/40 text-amber-400 hover:bg-amber-500/10"}`}>
+                          Deactivate
+                        </span>
+                      )}
                     </button>
                   </div>
                 ) : (
@@ -1446,79 +1462,79 @@ function AppInner() {
                       </div>
                     </div>
                   ) : (
-                  <div className="space-y-5">
-                    <div className="mb-5">
-                      <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-3.5 block`}>Workspace Handle</label>
-                      <p className={`text-[9px] ${T.label} mb-4`}>{view === "create" ? "Create a unique handle e.g. sprint_2025" : "The handle shared by your team"}</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1 block`}>Workspace Handle</label>
+                      <p className={`text-[9px] ${T.label} mb-1.5`}>{view === "create" ? "Create a unique handle e.g. sprint_2025" : "The handle shared by your team"}</p>
                       <input type="text" autoComplete="off" placeholder="e.g. sprint_2025"
-                        className={`w-full p-3.5 rounded-xl border font-mono tracking-wider outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                        className={`w-full p-2.5 rounded-xl border font-mono tracking-wider outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
                         value={workspaceName} onChange={e => setWorkspaceName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                       />
                       {view === "create" && workspaceName.length >= 3 && (
-                        <p className={`text-[9px] mt-1.5 font-bold ${
+                        <p className={`text-[9px] mt-1 font-bold ${
                           handleStatus === "taken" ? "text-red-500" : handleStatus === "available" ? "text-emerald-500" : T.label
                         }`}>
                           {handleStatus === "checking" ? "Checking availability…" : handleStatus === "taken" ? "This handle is already taken." : handleStatus === "available" ? "Handle is available." : ""}
                         </p>
                       )}
                     </div>
-                    <div className="mb-5">
-                      <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1.5 block`}>{view === "create" ? "Create Workspace Password" : "Workspace Password"}</label>
-                      <p className={`text-[9px] ${T.label} mb-2`}>{view === "create" ? "At least 8 characters — share only with your team." : "Ask your workspace admin for the password."}</p>
+                    <div>
+                      <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1 block`}>{view === "create" ? "Create Workspace Password" : "Workspace Password"}</label>
+                      <p className={`text-[9px] ${T.label} mb-1.5`}>{view === "create" ? "At least 8 characters — share only with your team." : "Ask your workspace admin for the password."}</p>
                       <div className="relative">
                         <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Enter password"
-                          className={`w-full p-3.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                          className={`w-full p-2.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
                           value={wsPin} onChange={e => setWsPin(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter" && view !== "create") handleAction(); }}
                         />
                         <button type="button" onClick={() => setShowWsPin(v => !v)}
-                          className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition cursor-pointer`}>
-                          {showWsPin ? "Hide" : "View"}
+                          className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${T.label} hover:text-blue-500 transition cursor-pointer`}>
+                          {showWsPin ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
                     </div>
                     {view === "create" && (
-                      <div className="mb-5">
-                        <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1.5 block`}>Re-enter Password</label>
+                      <div>
+                        <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1 block`}>Re-enter Password</label>
                         <div className="relative">
                           <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Confirm password"
-                            className={`w-full p-3.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                            className={`w-full p-2.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
                             value={wsPinConfirm} onChange={e => setWsPinConfirm(e.target.value)}
                             onKeyDown={e => { if (e.key === "Enter") handleAction(); }}
                           />
                           <button type="button" onClick={() => setShowWsPin(v => !v)}
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase tracking-widest ${T.label} hover:text-blue-500 transition cursor-pointer`}>
-                            {showWsPin ? "Hide" : "View"}
+                            className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${T.label} hover:text-blue-500 transition cursor-pointer`}>
+                            {showWsPin ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
                         </div>
                         {wsPinConfirm && (
-                          <p className={`text-[9px] mt-1.5 font-bold ${wsPin === wsPinConfirm ? "text-emerald-500" : "text-red-500"}`}>
+                          <p className={`text-[9px] mt-1 font-bold ${wsPin === wsPinConfirm ? "text-emerald-500" : "text-red-500"}`}>
                             {wsPin === wsPinConfirm ? "Passwords match." : "Passwords do not match."}
                           </p>
                         )}
                       </div>
                     )}
                     {view === "create" && (
-                      <div className="mt-1">
-                        <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-3 block`}>Project Title</label>
+                      <div>
+                        <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-1 block`}>Project Title</label>
                         <input type="text" autoComplete="off" placeholder="e.g. Sprint 3, Backend, Design…"
-                          className={`w-full p-3.5 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
+                          className={`w-full p-2.5 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
                           value={projectName} onChange={e => setProjectName(e.target.value)}
                         />
                       </div>
                     )}
                     {error && (
-                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                      <div className="flex items-center gap-2 p-2 rounded-xl bg-red-500/10 border border-red-500/20">
                         <AlertTriangle size={13} className="text-red-400 shrink-0" />
                         <p className="text-[10px] text-red-400 font-bold">{error}</p>
                       </div>
                     )}
                     <button onClick={handleAction}
-                      className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/40 mt-2">
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer shadow-lg shadow-blue-900/40">
                       {view === "create" ? "Initialize Workspace" : "Connect to Workspace"}
                     </button>
                     <button onClick={() => { setWorkspaceStepLoading(false); setView("start"); setError(""); setWsPin(""); setWorkspaceName(""); }}
-                      className={`inline-flex items-center justify-center gap-2 w-full text-[10px] ${T.label} font-black uppercase tracking-widest px-3 py-2 rounded-lg border transition cursor-pointer ${theme === "light" ? "border-gray-200 bg-gray-50 hover:bg-gray-100" : "border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}>
+                      className={`inline-flex items-center justify-center gap-2 w-full text-[10px] ${T.label} font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition cursor-pointer ${theme === "light" ? "border-gray-200 bg-gray-50 hover:bg-gray-100" : "border-slate-700 bg-slate-800/70 hover:bg-slate-700/70"}`}>
                       <ArrowLeft size={12} />
                       Back
                     </button>
