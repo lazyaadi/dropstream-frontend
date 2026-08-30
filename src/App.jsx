@@ -9,7 +9,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, EyeOff, Info, Shield,
-  Search, Lock,
+  Search, Lock, X,
 } from "lucide-react";
 
 // ─── CONSTANTS ───
@@ -228,7 +228,7 @@ const getPersistedProState = (email) => {
   return { isPro: true, proExpiresAt: effectiveExpiresAt };
 };
 
-import ParticleBg from "./components/effects/ParticleBg.jsx";
+
 import ToastContainer from "./components/ui/ToastContainer.jsx";
 import ActionBanner from "./components/ui/ActionBanner.jsx";
 import LiveActionCard from "./components/ui/LiveActionCard.jsx";
@@ -286,7 +286,7 @@ function AppInner() {
 
   useEffect(() => {
     document.documentElement.style.colorScheme = theme;
-    document.body.style.backgroundColor = theme === "dark" ? "#0B0D12" : "#f9fafb";
+    document.body.style.backgroundColor = theme === "dark" ? "#07080B" : "#f9fafb";
   }, [theme]);
 
   const [userName, setUserName]       = useState("");
@@ -304,6 +304,10 @@ function AppInner() {
   const [wsPin, setWsPin]               = useState("");
   const [wsPinConfirm, setWsPinConfirm] = useState("");
   const [showWsPin, setShowWsPin]       = useState(false);
+  const [showActivatePro, setShowActivatePro] = useState(false);
+  const [activatePinInput, setActivatePinInput] = useState("");
+  const [activateError, setActivateError] = useState("");
+  const [activateLoading, setActivateLoading] = useState(false);
   const [projectName, setProjectName]   = useState("");
   const [view, setView]                 = useState("start");
   const [workspaceStepLoading, setWorkspaceStepLoading] = useState(false);
@@ -463,6 +467,7 @@ function AppInner() {
   const notificationProcessingRef = useRef(false);
   const recentNotifSignaturesRef = useRef([]);
 
+  const activateSubmittingRef = useRef(false);
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
   useEffect(() => { effectiveIsProRef.current = isPro || proHydrating; }, [isPro, proHydrating]);
   useEffect(() => { userNameRef.current = userName; }, [userName]);
@@ -759,11 +764,18 @@ function AppInner() {
       setProExpiresAt(exp || null);
       persistProState(userEmailRef.current, { isPro: true, proExpiresAt: exp || null });
       addToast("Pro activated!", "success");
+      setShowActivatePro(false);
+      setActivatePinInput("");
+      setActivateError("");
+      setActivateLoading(false);
+      activateSubmittingRef.current = false;
     });
 
     socket.on("pro_activate_error", (msg) => {
-      setIsPro(false);
+      setActivateLoading(false);
+      setActivateError(msg || "Invalid or expired PIN.");
       addToast(msg || "Pro activation failed", "warn");
+      activateSubmittingRef.current = false;
     });
 
     socket.on("pro_deactivated", () => {
@@ -784,10 +796,11 @@ function AppInner() {
       if (resetAt !== undefined) setUserResetDate(resetAt);
       const serverIsPro = !!sp;
       const serverProExpiresAt = exp || null;
-      setIsPro(prev => serverIsPro || prev);
+      const resolvedIsPro = serverIsPro || isProRef.current;
+      setIsPro(resolvedIsPro);
       setProExpiresAt(prev => serverProExpiresAt || prev || null);
-      if (serverIsPro) {
-        persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
+      if (resolvedIsPro) {
+        persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt || proExpiresAtRef?.current || null });
       } else {
         clearPersistedProState(userEmailRef.current);
       }
@@ -1167,6 +1180,15 @@ function AppInner() {
     socket.emit("set_user_pro", { email: userEmail, proPin });
   }, [userEmail, proExpiresAt]);
 
+  const submitActivatePin = useCallback(() => {
+    const pin = activatePinInput.trim();
+    if (!pin || activateSubmittingRef.current) return;
+    activateSubmittingRef.current = true;
+    setActivateLoading(true);
+    setActivateError("");
+    socket.emit("set_user_pro", { email: userEmail, proPin: pin });
+  }, [activatePinInput, userEmail]);
+
   const openUpgradeProModal = useCallback(() => {
     setShowProModal(true);
   }, []);
@@ -1194,7 +1216,7 @@ function AppInner() {
   if ((autoJoining && !isJoined) || authLoading) {
     return (
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
-        <ParticleBg theme={theme} />
+        
         <div className="relative z-10 w-full max-w-sm px-4">
           <style>{`@keyframes sbDotPulse { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.5; } 40% { transform: scale(1.2); opacity: 1; } }`}</style>
           <div className={`rounded-3xl shadow-2xl px-6 py-5 text-center backdrop-blur-xl ${T.loginCard}`}>
@@ -1214,7 +1236,7 @@ function AppInner() {
   if (profileHydrating && isJoined) {
     return (
       <div className={`min-h-screen ${T.bg} flex items-center justify-center`}>
-        <ParticleBg theme={theme} />
+        
         <div className="relative z-10 text-center">
           <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className={`text-[11px] font-black ${T.label} uppercase tracking-widest`}>Restoring profile…</p>
@@ -1226,7 +1248,7 @@ function AppInner() {
   if (!isJoined) {
     return (
       <div className={`relative min-h-screen ${T.bg} font-sans ${T.text} flex items-center justify-center overflow-x-hidden p-4`}>
-        <ParticleBg theme={theme} />
+        
 
         <button onClick={toggleTheme}
           className={`fixed top-4 right-4 z-50 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer text-[10px] font-bold uppercase tracking-widest
@@ -1237,7 +1259,7 @@ function AppInner() {
 
         <AnimatePresence>
           {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => { setError(""); setView("start"); setWorkspaceName(""); setWsPin(""); }} />}
-          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setView("start"); setWsPin(""); setWsPinConfirm(""); setWorkspaceName(""); }} />}
+          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setWsPin(""); setWsPinConfirm(""); }} />}
           {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
           {showContact && (
             <ContactModal
@@ -1257,7 +1279,7 @@ function AppInner() {
         </AnimatePresence>
 
         <div className={`relative z-10 w-full max-w-md`}>
-          <div className={`absolute -inset-2 ${theme === "light" ? "bg-blue-100/60" : "bg-slate-800/40"} rounded-3xl blur-2xl`} />
+          <div className={`absolute -inset-2 ${theme === "light" ? "bg-blue-100/60" : "bg-slate-800/15"} rounded-3xl blur-xl`} />
           <div className={`relative ${T.loginCard} backdrop-blur-xl p-8 rounded-2xl border shadow-2xl`}>
 
             <div className="text-center mb-6">
@@ -1416,11 +1438,12 @@ function AppInner() {
                         className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition cursor-pointer shrink-0 ${theme === "light" ? "border-gray-300 text-gray-600 hover:bg-gray-50" : "border-slate-600 text-slate-300 hover:bg-slate-700/60"}`}>Switch</button>
                     </div>
 
-                    <button onClick={() => setShowProModal(true)}
+                    <button onClick={() => effectiveIsPro ? setShowProModal(true) : setShowActivatePro(true)}
+                      style={effectiveIsPro ? undefined : { background: theme === "light" ? "linear-gradient(to right, #FBBF24, #F59E0B)" : "linear-gradient(to right, #F59E0B, #D97706)" }}
                       className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all active:scale-95 cursor-pointer mt-4 border
                         ${effectiveIsPro
                           ? `${theme === "light" ? "bg-white border-amber-300 shadow-sm" : "bg-slate-800/50 border-amber-500/30"}`
-                          : `bg-gradient-to-r ${theme === "light" ? "from-amber-400 to-amber-500 border-amber-400 shadow-lg shadow-amber-500/25" : "from-amber-500 to-amber-600 border-amber-500/50 shadow-lg shadow-amber-500/30"}`
+                          : `${theme === "light" ? "border-amber-400 shadow-lg shadow-amber-500/25" : "border-amber-500/50 shadow-lg shadow-amber-500/30"}`
                         }`}
                     >
                       <div className="flex-1 text-left">
@@ -1562,7 +1585,7 @@ function AppInner() {
 
   return (
     <div className={`relative min-h-screen ${T.bg} ${T.text} font-sans pb-safe`}>
-      <ParticleBg theme={theme} />
+      
       <ToastContainer toasts={toasts} />
 
       <AnimatePresence>
@@ -1586,6 +1609,54 @@ function AppInner() {
         )}
         {showAdd && <AddTaskModal key="add-task-modal" onAdd={addTask} onClose={() => setShowAdd(false)} theme={theme} isPro={effectiveIsPro} onUpgrade={() => setShowProModal(true)} />}
         {showProModal && <ProModal key="pro-modal" isPro={effectiveIsPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
+        {showActivatePro && (
+          <motion.div key="activate-pro-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4"
+            onClick={() => { setShowActivatePro(false); setActivateError(""); setActivatePinInput(""); }}
+          >
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className={`${T.modal} border rounded-2xl p-7 max-w-sm w-full shadow-2xl`}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${theme === "light" ? "bg-amber-100" : "bg-amber-500/15"}`}>
+                    <Lock size={16} className={theme === "light" ? "text-amber-600" : "text-amber-400"} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${T.text}`}>Activate Pro</p>
+                    <p className={`text-[10px] ${T.label}`}>Enter your activation PIN</p>
+                  </div>
+                </div>
+                <button onClick={() => { setShowActivatePro(false); setActivateError(""); setActivatePinInput(""); }}
+                  className={`${T.label} hover:text-red-500 transition cursor-pointer`}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <input type="text" autoComplete="off" placeholder="Enter 14-digit PIN" maxLength={14} autoFocus
+                className={`w-full p-3.5 rounded-xl border font-mono tracking-widest text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm mb-3 ${T.input}`}
+                value={activatePinInput}
+                onChange={e => { setActivatePinInput(e.target.value.replace(/\s/g, "")); setActivateError(""); }}
+                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitActivatePin(); } }}
+              />
+
+              {activateError && (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-3">
+                  <AlertTriangle size={13} className="text-red-400 shrink-0" />
+                  <p className="text-[10px] text-red-400 font-bold">{activateError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={submitActivatePin}
+                disabled={!activatePinInput.trim() || activateLoading}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer">
+                {activateLoading ? "Verifying…" : "Activate"}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
         {showHistory && <HistoryPanel key="history-panel" history={history} isPro={effectiveIsPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
         {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={effectiveIsPro} onUpgrade={openUpgradeProModal} theme={theme} />}

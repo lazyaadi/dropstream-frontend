@@ -68,28 +68,14 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
     return null;
   };
 
-  const handleActivate = async () => {
+  const handleActivate = () => {
     if (!pinInput || pinInput.length !== 14) { setMessage("PIN must be 14 characters"); return; }
     setLoading(true);
-    try {
-      const res = await fetch(`${WORKER_URL}/api/verify-pin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: pinInput }),
-      });
-      const data = await res.json();
-      if (data.valid) {
-        setMessage("✓ Pro activated!");
-        setTimeout(() => { onActivatePin?.(pinInput.trim()); onClose(); }, 800);
-      } else {
-        setMessage("Invalid PIN. Contact support.");
-      }
-    } catch (e) {
-      setMessage("Error verifying PIN. Try again.");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    setMessage("Verifying with server…");
+    // Server owns the real check (validity + single-use lock). No optimistic
+    // success here — App.jsx's pro_activated/pro_activate_error listeners
+    // handle the toast and close this modal only once the server confirms.
+    onActivatePin?.(pinInput.trim());
   };
 
   const handleReceiptUpload = async () => {
@@ -349,8 +335,8 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
     <>
       <style>{`
         @media (max-width: 768px) {
-          .grid-auto-stack { grid-template-columns: 1fr !important; gap: 24px !important; }
-          .pro-modal-content { padding: 20px !important; padding-bottom: 32px !important; }
+          .grid-auto-stack { grid-template-columns: 1fr !important; }
+          .pro-modal-col-left { border-right: none !important; border-bottom: 1px solid #1B1E28 !important; }
         }
         @media (max-width: 640px) {
           .pro-modal-shell { max-width: 360px !important; border-radius: 20px !important; }
@@ -377,304 +363,187 @@ export default function ProModal({ isPro, onClose, onActivatePin, userEmail, the
           }}
           onClick={e => e.stopPropagation()}
         >
-          <div style={{ height: 3, background: "linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)" }} />
+          <div style={{ height: 2, background: "linear-gradient(90deg, #6E9BF4, #D9A441)" }} />
 
-          <div className="px-8 py-6 pro-modal-header" style={{ borderBottom: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(0,0,0,0.05)" }}>
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="pro-modal-title" style={{ fontSize: 28, fontWeight: 900, color: isDark ? "#f1f5f9" : "#0f172a", marginBottom: 4 }}>Pro Plan</h1>
-                <p className="pro-modal-subtitle" style={{ fontSize: 14, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500 }}>Unlock 3,000 tasks/month and premium features</p>
-              </div>
-              <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 10, border: "none", background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", cursor: "pointer", fontSize: 20, color: isDark ? "#94a3b8" : "#64748b", transition: "all 0.2s" }} onMouseEnter={e => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"; }} onMouseLeave={e => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"; }}>×</button>
+          <div className="px-6 py-5 pro-modal-header" style={{ borderBottom: "1px solid #1B1E28", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div>
+              <h1 className="pro-modal-title" style={{ fontSize: 19, fontWeight: 700, color: "#ECEEF2", marginBottom: 3, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.01em" }}>Pro Plan</h1>
+              <p className="pro-modal-subtitle" style={{ fontSize: 12, color: "#8A90A0" }}>Unlock 3,000 tasks/month and premium features</p>
             </div>
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid #232733", background: "#171A22", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#565C6E", flexShrink: 0 }}>
+              <X size={13} />
+            </button>
           </div>
 
-          <div style={{ flex: 1, overflow: "auto", padding: "32px", paddingBottom: "48px" }} className="pro-modal-content">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }} className="grid-auto-stack">
-              <div>
-                <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgb(59, 130, 246)" }}>How It Works</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ flex: 1, overflow: "auto", padding: 0 }} className="pro-modal-content">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }} className="grid-auto-stack">
+              <div style={{ padding: "18px 22px", borderRight: "1px solid #1B1E28" }} className="pro-modal-col-left">
+                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#6E9BF4", marginBottom: 12 }}>How it works</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 16 }}>
                   {[
-                    { step: 1, title: "Choose Your Method", desc: "Copy our payment details below. We currently accept Binance Pay ID or UBL Bank Transfer." },
-                    { step: 2, title: "Complete the Transfer", desc: "Send the exact amount for the Pro plan.Take a clear screenshot or save your successful transaction receipt." },
-                    { step: 3, title: "Submit Verification", desc: "Click the UPLOAD RECIEPT button. Fill in your email and attach your screenshot. This links your payment to your account." },
-                    { step: 4, title: "Await Your PIN", desc: "Our team will verify the transaction. Once confirmed, a unique 14-digit Activation PIN will be sent to your email address (usually within 15–60 minutes)." },
-                    { step: 5, title: "Activate Pro", desc: `Open your Workspace, click "Activate Pro," and enter your PIN. Your account will be upgraded instantly!` },
+                    { step: 1, title: "Choose a method", desc: "Binance Pay or UBL Bank Transfer." },
+                    { step: 2, title: "Send payment", desc: "and save your transaction receipt." },
+                    { step: 3, title: "Upload receipt", desc: "with your email to link the payment." },
+                    { step: 4, title: "Get your PIN", desc: "by email, usually within 15–60 min." },
+                    { step: 5, title: "Activate Pro", desc: "in your workspace using the PIN." },
                   ].map((item, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, #3b82f6, #8b5cf6)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>{item.step}</div>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a", marginBottom: 2 }}>{item.title}</p>
-                        <p style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>{item.desc}</p>
-                      </div>
+                    <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+                      <div style={{ width: 19, height: 19, borderRadius: "50%", background: "rgba(110,155,244,0.14)", color: "#6E9BF4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, fontWeight: 600, flexShrink: 0, marginTop: 1 }}>{item.step}</div>
+                      <p style={{ fontSize: 12, lineHeight: 1.45, color: "#8A90A0" }}><b style={{ fontWeight: 600, color: "#ECEEF2" }}>{item.title}</b> {item.desc}</p>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ marginTop: 24, padding: 16, borderRadius: 12, background: isDark ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.05)", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid rgba(59, 130, 246, 0.15)", display: "flex", gap: 12 }}>
-                  <AlertCircle size={18} style={{ color: isDark ? "#60a5fa" : "#2563eb", flexShrink: 0, marginTop: 2 }} />
-                  <div>
-                    <p style={{ fontSize: 11, fontWeight: 800, color: isDark ? "#60a5fa" : "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Manual Processing</p>
-                    <p style={{ fontSize: 11, color: isDark ? "#cbd5e1" : "#475569", lineHeight: 1.6 }}>Payments are processed manually. If you don't receive your PIN within 3 hours, please contact support via the app settings.</p>
-                  </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start", background: "rgba(110,155,244,0.14)", border: "1px solid rgba(110,155,244,0.22)", borderRadius: 10, padding: "10px 12px", marginBottom: 18 }}>
+                  <AlertCircle size={13} style={{ color: "#6E9BF4", flexShrink: 0, marginTop: 2 }} />
+                  <p style={{ fontSize: 11, color: "#8A90A0", lineHeight: 1.5 }}><b style={{ color: "#6E9BF4", fontWeight: 600 }}>Manual processing</b> — no PIN after 3 hours? Contact support in app settings.</p>
                 </div>
 
-                <div style={{ marginTop: 24 }}>
-                  <p style={{ fontSize: 14, fontWeight: 900, color: isDark ? "#f1f5f9" : "#0f172a", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Premium Pro Features</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="grid-auto-stack">
-                    {[
-                      { title: "3,000 Tasks", desc: "Massive capacity for large-scale projects and high-volume teams." },
-                      { title: "File Upload", desc: "Attach documents, images, and assets directly to your tasks." },
-                      { title: "Advanced Search", desc: "Find exactly what you need with powerful filters and global indexing." },
-                      { title: "Full History", desc: "Track every change with a complete, permanent audit log of all activity." },
-                      { title: "Real-time Notifications", desc: "Stay updated instantly with live desktop and email alerts." },
-                      { title: "Team View", desc: "Collaborate seamlessly with shared workspace visibility for all members." },
-                    ].map((feature, i) => (
-                      <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: i * 0.08, duration: 0.4, ease: "easeOut" }}
-                        style={{ 
-                          display: "flex", gap: 12, padding: "14px 16px", borderRadius: 12,
-                          border: isDark ? "1px solid rgba(16,185,129,0.15)" : "1px solid rgba(16,185,129,0.1)",
-                          background: isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.02)",
-                          cursor: "pointer", transition: "all 0.3s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = isDark ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.08)";
-                          e.currentTarget.style.borderColor = isDark ? "rgba(16,185,129,0.35)" : "rgba(16,185,129,0.25)";
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = isDark ? "rgba(16,185,129,0.04)" : "rgba(16,185,129,0.02)";
-                          e.currentTarget.style.borderColor = isDark ? "rgba(16,185,129,0.15)" : "rgba(16,185,129,0.1)";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                      >
-                        <CheckCircle2 size={18} style={{ color: "#10b981", flexShrink: 0, marginTop: "2px" }} />
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? "#cbd5e1" : "#0f172a" }}>{feature.title}</span>
-                          <span style={{ fontSize: 11, fontWeight: 400, color: isDark ? "#94a3b8" : "#64748b", lineHeight: 1.4 }}>{feature.desc}</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#4ADE8F", marginBottom: 12 }}>Premium features</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    "3,000 tasks/month", "File upload on tasks", "Advanced search & filters",
+                    "Full activity history", "Real-time notifications", "Shared team view",
+                  ].map((label, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, background: "#171A22", border: "1px solid #1B1E28", borderRadius: 9, padding: "8px 10px" }}>
+                      <Check size={13} style={{ color: "#4ADE8F", flexShrink: 0 }} strokeWidth={3} />
+                      <span style={{ fontSize: 12, fontWeight: 500, color: "#ECEEF2" }}>{label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                <div>
-                  <h3 style={{ fontSize: 14, fontWeight: 800, color: isDark ? "#f1f5f9" : "#0f172a", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.08em" }}>Choose Payment Method</h3>
-                  <AnimatePresence mode="wait">
-                    {selectedMethod === "binance" && (
-                      <motion.div key="binance" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.3 }}
-                        style={{ borderRadius: 16, background: isDark ? "rgba(255,255,255,0.03)" : "#fff", border: isDark ? "1.5px solid rgba(255,255,255,0.08)" : "1.5px solid rgba(0,0,0,0.08)", padding: 24, marginBottom: 20, position: "relative" }}>
-                        <h4 style={{ fontSize: 16, fontWeight: 900, color: isDark ? "#f59e0b" : "#d97706", marginBottom: 8 }}>Binance Pay</h4>
-                        <p style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 20, fontWeight: 500 }}>Fast crypto transfer to activate your Pro account</p>
-                        <div style={{ borderRadius: 10, background: isDark ? "rgba(255,255,255,0.04)" : "#f8fafc", padding: 16, marginBottom: 16 }}>
-                          <p style={{ fontSize: 9, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>Binance Account ID</p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-                            <p style={{ fontSize: 18, fontWeight: 900, color: isDark ? "#f59e0b" : "#d97706", fontFamily: "'Courier New', monospace", letterSpacing: "0.05em", flex: 1, wordBreak: "break-all" }}>853693254</p>
-                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
-                              onClick={() => copyToClipboard("853693254", "binance")}
-                              style={{
-                                width: 40, height: 40, border: "none", borderRadius: 10,
-                                background: copied === "binance" ? (isDark ? "rgba(16,185,129,0.25)" : "rgba(16,185,129,0.2)") : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"),
-                                color: copied === "binance" ? "#10b981" : (isDark ? "#f59e0b" : "#d97706"),
-                                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                                padding: 0, fontSize: 18,
-                              }}
-                              title="Copy Account ID"
-                            >
-                              {copied === "binance" ? <Check size={18} /> : <Copy size={18} />}
-                            </motion.button>
-                          </div>
-                        </div>
-                        <div style={{ background: isDark ? "rgba(255,165,0,0.08)" : "rgba(255,165,0,0.05)", border: isDark ? "1px solid rgba(255,165,0,0.15)" : "1px solid rgba(255,165,0,0.1)", padding: 12, borderRadius: 10, marginBottom: 20 }}>
-                          <p style={{ fontSize: 11, color: isDark ? "#fbbf24" : "#f59e0b", fontWeight: 700, marginBottom: 4 }}>Important:</p>
-                          <p style={{ fontSize: 11, color: isDark ? "#cbd5e1" : "#475569", lineHeight: 1.5 }}>Include your email address in the payment note for account linking.</p>
-                        </div>
-                        <div style={{ background: isDark ? "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05))" : "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))", border: isDark ? "1px solid rgba(245,158,11,0.2)" : "1px solid rgba(245,158,11,0.15)", padding: 14, borderRadius: 10, textAlign: "center" }}>
-                          <p style={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>Total Payment</p>
-                          <p style={{ fontSize: 24, fontWeight: 900, color: isDark ? "#f59e0b" : "#d97706" }}>$11 USD</p>
-                        </div>
-                      </motion.div>
-                    )}
-                    
-                    {selectedMethod === "ubl" && (
-                      <motion.div key="ubl" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.3 }}
-                        style={{ borderRadius: 16, background: isDark ? "rgba(16,185,129,0.05)" : "rgba(16,185,129,0.02)", border: isDark ? "1.5px solid rgba(16,185,129,0.3)" : "1.5px solid rgba(16,185,129,0.2)", padding: 24, marginBottom: 20, position: "relative" }}>
-                        <div style={{ position: "absolute", top: 12, right: 12, background: isDark ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.15)", color: isDark ? "#6ee7b7" : "#10b981", padding: "4px 12px", borderRadius: 6, fontSize: 7, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase" }}>Recommended</div>
-                        <h4 style={{ fontSize: 16, fontWeight: 900, color: isDark ? "#10b981" : "#059669", marginBottom: 8 }}>UBL Bank Transfer</h4>
-                        <p style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 20, fontWeight: 500 }}>Local bank transfer in Pakistani Rupees (PKR)</p>
-                        <div style={{ borderRadius: 10, background: isDark ? "rgba(255,255,255,0.04)" : "#f8fafc", padding: 16, marginBottom: 16 }}>
-                          <p style={{ fontSize: 9, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>Account Number</p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-                            <p style={{ fontSize: 18, fontWeight: 900, color: isDark ? "#10b981" : "#059669", fontFamily: "'Courier New', monospace", letterSpacing: "0.05em", flex: 1, wordBreak: "break-all" }}>1951324646652</p>
-                            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
-                              onClick={() => copyToClipboard("1951324646652", "ubl")}
-                              style={{
-                                width: 40, height: 40, border: "none", borderRadius: 10,
-                                background: copied === "ubl" ? (isDark ? "rgba(16,185,129,0.25)" : "rgba(16,185,129,0.2)") : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"),
-                                color: copied === "ubl" ? "#10b981" : (isDark ? "#10b981" : "#059669"),
-                                cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                                padding: 0, fontSize: 18,
-                              }}
-                              title="Copy Account Number"
-                            >
-                              {copied === "ubl" ? <Check size={18} /> : <Copy size={18} />}
-                            </motion.button>
-                          </div>
-                        </div>
-                        <div style={{ background: isDark ? "rgba(16,185,129,0.08)" : "rgba(16,185,129,0.05)", border: isDark ? "1px solid rgba(16,185,129,0.15)" : "1px solid rgba(16,185,129,0.1)", padding: 12, borderRadius: 10, marginBottom: 20 }}>
-                          <p style={{ fontSize: 11, color: isDark ? "#6ee7b7" : "#10b981", fontWeight: 700, marginBottom: 4 }}>Important:</p>
-                          <p style={{ fontSize: 11, color: isDark ? "#cbd5e1" : "#475569", lineHeight: 1.5 }}>Include your email address in the bank transfer note for account linking.</p>
-                        </div>
-                        <div style={{ background: isDark ? "linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))" : "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03))", border: isDark ? "1px solid rgba(16,185,129,0.2)" : "1px solid rgba(16,185,129,0.15)", padding: 14, borderRadius: 10, textAlign: "center" }}>
-                          <p style={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>Total Payment</p>
-                          <p style={{ fontSize: 24, fontWeight: 900, color: isDark ? "#10b981" : "#059669" }}>PKR 2,800</p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              <div style={{ padding: "18px 22px" }} className="pro-modal-col-right">
+                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#D9A441", marginBottom: 12 }}>Payment</p>
 
-                  <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-                    {[
-                      { id: "binance", label: "Binance Pay" },
-                      { id: "ubl", label: "UBL Bank" },
-                    ].map(m => (
-                      <motion.button key={m.id} whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedMethod(m.id)}
-                        style={{
-                          flex: 1, padding: 12, borderRadius: 10, border: `2px solid ${selectedMethod === m.id ? (isDark ? "#3b82f6" : "#2563eb") : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)")}`,
-                          background: selectedMethod === m.id ? (isDark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.08)") : (isDark ? "rgba(255,255,255,0.02)" : "#fff"),
-                          color: selectedMethod === m.id ? (isDark ? "#3b82f6" : "#2563eb") : (isDark ? "#cbd5e1" : "#475569"), fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-                        }}
-                      >
-                        {m.label}
+                <div style={{ display: "flex", gap: 7, marginBottom: 14 }}>
+                  {[
+                    { id: "binance", label: "Binance Pay" },
+                    { id: "ubl", label: "UBL Bank" },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setSelectedMethod(m.id)}
+                      style={{
+                        flex: 1, textAlign: "center", padding: "8px 0", borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: "pointer",
+                        background: selectedMethod === m.id ? "rgba(217,164,65,0.12)" : "#171A22",
+                        border: selectedMethod === m.id ? "1px solid #D9A441" : "1px solid #232733",
+                        color: selectedMethod === m.id ? "#D9A441" : "#8A90A0",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {selectedMethod === "binance" && (
+                    <motion.div key="binance" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#565C6E", marginBottom: 6 }}>Binance Account ID</p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#171A22", border: "1px solid #1B1E28", borderRadius: 10, padding: "10px 10px 10px 12px", marginBottom: 10 }}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 14.5, fontWeight: 600, color: "#D9A441" }}>853693254</span>
+                        <motion.button whileTap={{ scale: 0.92 }} onClick={() => copyToClipboard("853693254", "binance")}
+                          style={{ width: 26, height: 26, borderRadius: 7, background: "#1B1F29", border: "1px solid #232733", display: "flex", alignItems: "center", justifyContent: "center", color: "#D9A441", cursor: "pointer", flexShrink: 0 }}>
+                          {copied === "binance" ? <Check size={12} /> : <Copy size={12} />}
+                        </motion.button>
+                      </div>
+                      <p style={{ fontSize: 11, color: "#8A90A0", marginBottom: 12 }}><b style={{ color: "#D9A441", fontWeight: 600 }}>Note:</b> include your email in the payment note.</p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(217,164,65,0.12)", border: "1px solid rgba(217,164,65,0.25)", borderRadius: 10, padding: "11px 13px", marginBottom: 16 }}>
+                        <span style={{ fontSize: 11.5, color: "#8A90A0", fontWeight: 500 }}>Total payment</span>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 17, fontWeight: 700, color: "#D9A441" }}>$11 USD</span>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {selectedMethod === "ubl" && (
+                    <motion.div key="ubl" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#565C6E", marginBottom: 6 }}>Account Number</p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#171A22", border: "1px solid #1B1E28", borderRadius: 10, padding: "10px 10px 10px 12px", marginBottom: 10 }}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 14.5, fontWeight: 600, color: "#4ADE8F" }}>1951324646652</span>
+                        <motion.button whileTap={{ scale: 0.92 }} onClick={() => copyToClipboard("1951324646652", "ubl")}
+                          style={{ width: 26, height: 26, borderRadius: 7, background: "#1B1F29", border: "1px solid #232733", display: "flex", alignItems: "center", justifyContent: "center", color: "#4ADE8F", cursor: "pointer", flexShrink: 0 }}>
+                          {copied === "ubl" ? <Check size={12} /> : <Copy size={12} />}
+                        </motion.button>
+                      </div>
+                      <p style={{ fontSize: 11, color: "#8A90A0", marginBottom: 12 }}><b style={{ color: "#4ADE8F", fontWeight: 600 }}>Note:</b> include your email in the transfer note.</p>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(74,222,143,0.12)", border: "1px solid rgba(74,222,143,0.25)", borderRadius: 10, padding: "11px 13px", marginBottom: 16 }}>
+                        <span style={{ fontSize: 11.5, color: "#8A90A0", fontWeight: 500 }}>Total payment</span>
+                        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 17, fontWeight: 700, color: "#4ADE8F" }}>PKR 2,800</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#565C6E", display: "block", marginBottom: 8 }}>Email Address</label>
+                <input type="email" value={receiptEmail} onChange={e => setReceiptEmail(e.target.value)}
+                  style={{ width: "100%", background: "#171A22", border: "1px solid #232733", borderRadius: 9, padding: "9px 11px", color: "#ECEEF2", fontFamily: "'Inter', sans-serif", fontSize: 12, outline: "none", marginBottom: 10, boxSizing: "border-box" }}
+                />
+
+                <div
+                  style={{
+                    display: "flex", alignItems: "center", gap: 9, border: "1.5px dashed #232733", borderRadius: 9,
+                    padding: "11px 12px", marginBottom: 10, cursor: "pointer",
+                    background: receiptFile ? "rgba(74,222,143,0.06)" : "transparent",
+                    borderColor: receiptFile ? "rgba(74,222,143,0.3)" : "#232733",
+                  }}
+                  onDrop={(e) => { e.preventDefault(); const files = e.dataTransfer.files; if (files && files[0]) setReceiptFile(files[0]); }}
+                  onDragOver={(e) => e.preventDefault()}
+                >
+                  <input type="file" id="receipt-upload" accept="image/*" onChange={e => { if (e.target.files?.[0]) setReceiptFile(e.target.files[0]); }} style={{ display: "none" }} />
+                  <label htmlFor="receipt-upload" style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer", width: "100%" }}>
+                    <Upload size={15} style={{ color: "#565C6E", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11.5, color: "#8A90A0", flex: 1 }}>
+                      {receiptFile ? `✓ ${receiptFile.name}` : "Upload receipt (PNG, JPG, max 5MB)"}
+                    </span>
+                    {receiptFile && (
+                      <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReceiptFile(null); setMessage(""); }}
+                        style={{ width: 22, height: 22, borderRadius: 6, border: "none", background: "#1B1F29", color: "#8A90A0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <X size={12} />
                       </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0" }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: isDark ? "#475569" : "#cbd5e1", textTransform: "uppercase" }}>Submit Receipt or Enter PIN</span>
-                  <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0" }} />
-                </div>
-
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                  style={{ borderRadius: 16, background: isDark ? "rgba(255,255,255,0.02)" : "#f8fafc", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)", padding: 20 }}>
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? "#475569" : "#94a3b8", display: "block", marginBottom: 8 }}>Email Address</label>
-                    <input type="email" value={receiptEmail} onChange={e => setReceiptEmail(e.target.value)}
-                      style={{
-                        width: "100%", padding: 11, borderRadius: 10,
-                        border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.08)",
-                        background: isDark ? "rgba(255,255,255,0.03)" : "#fff",
-                        color: isDark ? "#e2e8f0" : "#0f172a",
-                        fontSize: 12, fontWeight: 500, outline: "none", transition: "all 0.2s",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? "#475569" : "#94a3b8", display: "block", marginBottom: 8 }}>Payment Receipt (Image)</label>
-                    <div
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                        borderRadius: 12, border: isDark ? "2px dashed rgba(255,255,255,0.15)" : "2px dashed rgba(0,0,0,0.15)",
-                        padding: 20, cursor: "pointer", transition: "all 0.2s",
-                        background: receiptFile ? (isDark ? "rgba(16,185,129,0.08)" : "rgba(16,185,129,0.05)") : (isDark ? "rgba(255,255,255,0.02)" : "#fff"),
-                        borderColor: receiptFile ? (isDark ? "rgba(16,185,129,0.3)" : "rgba(16,185,129,0.2)") : "inherit",
-                        minHeight: 80,
-                      }}
-                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.background = isDark ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.05)"; }}
-                      onDragLeave={(e) => { e.currentTarget.style.background = receiptFile ? (isDark ? "rgba(16,185,129,0.08)" : "rgba(16,185,129,0.05)") : (isDark ? "rgba(255,255,255,0.02)" : "#fff"); }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const files = e.dataTransfer.files;
-                        if (files && files[0]) setReceiptFile(files[0]);
-                      }}
-                    >
-                      <input type="file" id="receipt-upload" accept="image/*" onChange={e => { if (e.target.files?.[0]) setReceiptFile(e.target.files[0]); }} style={{ display: "none" }} />
-                      <label htmlFor="receipt-upload" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", width: "100%" }}>
-                        <Upload size={20} style={{ color: isDark ? "#64748b" : "#94a3b8", flexShrink: 0 }} />
-                        <div style={{ textAlign: "left", flex: 1 }}>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: isDark ? "#cbd5e1" : "#0f172a", margin: 0 }}>
-                            {receiptFile ? `✓ ${receiptFile.name}` : "Click to upload or drag receipt"}
-                          </p>
-                          <p style={{ fontSize: 10, color: isDark ? "#64748b" : "#94a3b8", margin: "4px 0 0 0" }}>
-                            {receiptFile ? `${(receiptFile.size / 1024).toFixed(1)} KB` : "PNG, JPG, GIF (max 5MB)"}
-                          </p>
-                        </div>
-                        {receiptFile && (
-                          <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReceiptFile(null); setMessage(""); }}
-                            style={{
-                              width: 28, height: 28, borderRadius: 6, border: "none", background: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
-                              color: isDark ? "#cbd5e1" : "#475569", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                              flexShrink: 0, transition: "all 0.2s"
-                            }} title="Remove file"
-                          >
-                            <X size={16} />
-                          </motion.button>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleReceiptUpload} disabled={submittingReceipt || !receiptFile || !receiptEmail}
-                    style={{
-                      width: "100%", padding: 12, borderRadius: 10, border: "none",
-                      background: receiptFile && receiptEmail ? "linear-gradient(135deg, #3b82f6, #8b5cf6)" : (isDark ? "rgba(255,255,255,0.04)" : "#e2e8f0"),
-                      color: receiptFile && receiptEmail ? "#fff" : (isDark ? "#334155" : "#94a3b8"),
-                      fontSize: 12, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
-                      cursor: receiptFile && receiptEmail && !submittingReceipt ? "pointer" : "not-allowed",
-                      transition: "all 0.2s", marginBottom: 12,
-                    }}
-                  >
-                    {submittingReceipt ? "Submitting…" : "Submit Receipt & Get PIN"}
-                  </motion.button>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
-                    <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,0.07)" : "#e2e8f0" }} />
-                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: isDark ? "#334155" : "#cbd5e1", textTransform: "uppercase" }}>Or</span>
-                    <div style={{ flex: 1, height: 1, background: isDark ? "rgba(255,255,255,0.07)" : "#e2e8f0" }} />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? "#475569" : "#94a3b8", display: "block", marginBottom: 8 }}>Enter 14-Digit PIN</label>
-                    <input type="text" placeholder="ABC123!@#$%ABC"
-                      value={pinInput} onChange={e => { setPinInput(e.target.value.slice(0, 14).toUpperCase()); setMessage(""); }}
-                      maxLength={14}
-                      style={{
-                        width: "100%", padding: 11, borderRadius: 10,
-                        border: isDark ? `1.5px solid ${message && !message.includes("✓") ? "rgba(239,68,68,0.5)" : pinInput.length === 14 ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.08)"}` : `1.5px solid ${message && !message.includes("✓") ? "rgba(239,68,68,0.4)" : pinInput.length === 14 ? "rgba(16,185,129,0.35)" : "rgba(0,0,0,0.08)"}`,
-                        background: isDark ? "rgba(255,255,255,0.03)" : "#fff",
-                        color: isDark ? "#e2e8f0" : "#0f172a",
-                        fontSize: 14, fontWeight: 700, textAlign: "center", letterSpacing: "0.12em", outline: "none", transition: "all 0.2s", fontFamily: "monospace", marginBottom: 12,
-                      }}
-                    />
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={handleActivate} disabled={loading || pinInput.length !== 14}
-                      style={{
-                        width: "100%", padding: 12, borderRadius: 10, border: "none",
-                        background: pinInput.length === 14 && !loading ? "linear-gradient(135deg, #10b981, #059669)" : (isDark ? "rgba(255,255,255,0.04)" : "#e2e8f0"),
-                        color: pinInput.length === 14 && !loading ? "#fff" : (isDark ? "#334155" : "#94a3b8"),
-                        fontSize: 12, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
-                        cursor: pinInput.length === 14 && !loading ? "pointer" : "not-allowed",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      {loading ? "Verifying…" : "Activate Pro"}
-                    </motion.button>
-                  </div>
-
-                  <AnimatePresence>
-                    {message && (
-                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        style={{ fontSize: 11, fontWeight: 700, textAlign: "center", marginTop: 12, color: message.includes("✓") ? "#10b981" : "#ef4444" }}
-                      >{message}</motion.p>
                     )}
-                  </AnimatePresence>
-                </motion.div>
+                  </label>
+                </div>
+
+                <motion.button whileTap={{ scale: 0.97 }} onClick={handleReceiptUpload} disabled={submittingReceipt || !receiptFile || !receiptEmail}
+                  style={{
+                    width: "100%", padding: "10px 0", borderRadius: 9, border: "none",
+                    background: receiptFile && receiptEmail ? "#6E9BF4" : "#171A22",
+                    color: receiptFile && receiptEmail ? "#0B0D12" : "#565C6E",
+                    fontSize: 12, fontWeight: 700, letterSpacing: "0.02em", textTransform: "uppercase",
+                    cursor: receiptFile && receiptEmail && !submittingReceipt ? "pointer" : "not-allowed", marginBottom: 6,
+                  }}
+                >
+                  {submittingReceipt ? "Submitting…" : "Submit & Get PIN"}
+                </motion.button>
+
+                <p style={{ textAlign: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.1em", color: "#565C6E", textTransform: "uppercase", margin: "10px 0" }}>Or</p>
+
+                <input type="text" className="mono" placeholder="Enter 14-digit PIN"
+                  value={pinInput} onChange={e => { setPinInput(e.target.value.slice(0, 14).toUpperCase()); setMessage(""); }}
+                  maxLength={14}
+                  style={{
+                    width: "100%", background: "#171A22", borderRadius: 9, padding: "9px 11px", color: "#ECEEF2",
+                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, textAlign: "center", letterSpacing: "0.1em", outline: "none", marginBottom: 8, boxSizing: "border-box",
+                    border: `1px solid ${message && !message.includes("Verifying") ? "rgba(240,87,107,0.5)" : pinInput.length === 14 ? "rgba(74,222,143,0.4)" : "#232733"}`,
+                  }}
+                />
+                <motion.button whileTap={{ scale: 0.97 }} onClick={handleActivate} disabled={loading || pinInput.length !== 14}
+                  style={{
+                    width: "100%", padding: "10px 0", borderRadius: 9, border: "none",
+                    background: pinInput.length === 14 && !loading ? "#D9A441" : "#171A22",
+                    color: pinInput.length === 14 && !loading ? "#0B0D12" : "#565C6E",
+                    fontSize: 12, fontWeight: 700, letterSpacing: "0.02em", textTransform: "uppercase",
+                    cursor: pinInput.length === 14 && !loading ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {loading ? "Verifying…" : "Activate Pro"}
+                </motion.button>
+
+                <AnimatePresence>
+                  {message && (
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      style={{ fontSize: 11, fontWeight: 600, textAlign: "center", marginTop: 10, color: "#F0576B" }}
+                    >{message}</motion.p>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>

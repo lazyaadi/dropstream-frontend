@@ -45,7 +45,7 @@ export const PRO_FEATURES = [
 ];
 
 export const TD = {
-  bg: "bg-[#0B0D12]", nav: "bg-slate-900/80 border-slate-800/60",
+  bg: "bg-[#07080B]", nav: "bg-slate-900/80 border-slate-800/60",
   card: "bg-slate-800/60 border-slate-700/50 hover:border-slate-600/60",
   cardText: "text-slate-200", subText: "text-slate-400",
   input: "bg-slate-800/80 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-blue-500",

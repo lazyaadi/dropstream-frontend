@@ -103,10 +103,7 @@ const MobileMenu = ({
             {isPro && (
               <div className={`mt-4 rounded-xl border px-3 py-3 ${theme === "light" ? "bg-amber-50 border-amber-200" : "bg-amber-500/10 border-amber-500/20"}`}>
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className={`text-[9px] font-black uppercase tracking-widest ${theme === "light" ? "text-amber-700" : "text-amber-400"}`}>Pro Active</p>
-                    <p className={`text-[10px] font-semibold mt-1 ${T.text}`}>You have {daysLeft === null ? "full Pro access" : `${daysLeft} ${daysLabel.toLowerCase()}`}</p>
-                  </div>
+                 
                   <div className="text-right">
                     <p className={`text-base font-black leading-none ${theme === "light" ? "text-amber-600" : "text-amber-400"}`}>{daysLeft === null ? "--" : daysLeft}</p>
                     <p className={`text-[8px] font-black uppercase tracking-widest ${T.subText}`}>{daysLabel}</p>
