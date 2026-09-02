@@ -1579,6 +1579,7 @@ function AppInner() {
             </div>
           </div>
         </div>
+        <AnimatePresence>{activateProModal}</AnimatePresence>
       </div>
     );
   }
@@ -1609,64 +1610,7 @@ function AppInner() {
         )}
         {showAdd && <AddTaskModal key="add-task-modal" onAdd={addTask} onClose={() => setShowAdd(false)} theme={theme} isPro={effectiveIsPro} onUpgrade={() => setShowProModal(true)} />}
         {showProModal && <ProModal key="pro-modal" isPro={effectiveIsPro} onClose={() => setShowProModal(false)} onActivatePin={handleProActivated} userEmail={userEmail} theme={theme} proExpiresAt={proExpiresAt} />}
-        {showActivatePro && (
-          <motion.div key="activate-pro-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4"
-            onClick={() => { setShowActivatePro(false); setActivateError(""); setActivatePinInput(""); }}
-          >
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className={`${T.modal} border rounded-2xl p-7 max-w-sm w-full shadow-2xl`}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${theme === "light" ? "bg-amber-100" : "bg-amber-500/15"}`}>
-                    <Lock size={16} className={theme === "light" ? "text-amber-600" : "text-amber-400"} />
-                  </div>
-                  <div>
-                    <p className={`text-sm font-bold ${T.text}`}>Activate Pro</p>
-                    <p className={`text-[10px] ${T.label}`}>Enter your activation PIN</p>
-                  </div>
-                </div>
-                <button onClick={() => { setShowActivatePro(false); setActivateError(""); setActivatePinInput(""); }}
-                  className={`${T.label} hover:text-red-500 transition cursor-pointer`}>
-                  <X size={16} />
-                </button>
-              </div>
-
-              {activateError ? (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 44, height: 44, margin: "0 auto 14px", borderRadius: "50%", background: "rgba(240,87,107,0.12)", border: "1px solid rgba(240,87,107,0.28)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Lock size={19} style={{ color: "#F0576B" }} />
-                  </div>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: "#ECEEF2", marginBottom: 8, fontFamily: "'Space Grotesk', sans-serif" }}>Unauthorized PIN</p>
-                  <p style={{ fontSize: 12.5, color: "#8A90A0", lineHeight: 1.5, marginBottom: 20 }}>{activateError}</p>
-                  <button
-                    onClick={() => { setActivateError(""); setActivatePinInput(""); }}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2">
-                    Try Again
-                    <RefreshCw size={14} />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <input type="text" autoComplete="off" placeholder="Enter 14-digit PIN" maxLength={14} autoFocus
-                    className={`w-full p-3.5 rounded-xl border font-mono tracking-widest text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm mb-3 ${T.input}`}
-                    value={activatePinInput}
-                    onChange={e => setActivatePinInput(e.target.value.replace(/\s/g, ""))}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitActivatePin(); } }}
-                  />
-                  <button
-                    onClick={submitActivatePin}
-                    disabled={!activatePinInput.trim() || activateLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer">
-                    {activateLoading ? "Verifying…" : "Activate"}
-                  </button>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
+               {activateProModal}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
         {showHistory && <HistoryPanel key="history-panel" history={history} isPro={effectiveIsPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
         {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={effectiveIsPro} onUpgrade={openUpgradeProModal} theme={theme} />}
