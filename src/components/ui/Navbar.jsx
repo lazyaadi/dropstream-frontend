@@ -22,12 +22,12 @@ const Navbar = ({
   handleLeave,
   handleDeleteWorkspace,
   setShowProModal,
+  onActivatePro,
+  onDeactivatePro,
   tasks,
   progress,
   showMobileMenu,
   setShowMobileMenu,
-  soundEnabled,
-  onToggleSound,
   
 }) => {
   return (
@@ -59,13 +59,21 @@ const Navbar = ({
                     Pro expires on {proExpiryLabel}
                   </span>
                 )}
-                <button onClick={() => setShowProModal(true)}
+                <button onClick={() => setShowProModal(true)} 
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 transition cursor-pointer"
                   title="Pro features">
                   <span className="text-[7px] font-black text-amber-400 uppercase tracking-wider">PRO</span>
                 </button>
               </div>
-            )}
+            )} 
+            <button onClick={isPro ? onDeactivatePro : onActivatePro}
+              className={`hidden sm:inline-flex items-center px-2 py-1 rounded-lg border text-[7px] font-black uppercase tracking-wider transition cursor-pointer shrink-0
+                ${isPro
+                  ? (theme === "light" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-red-500/30 text-red-400 hover:bg-red-500/10")
+                  : (theme === "light" ? "border-amber-300 text-amber-700 hover:bg-amber-50" : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10")}`}
+              title={isPro ? "Deactivate Pro" : "Activate Pro"}>
+              {isPro ? "Deactivate" : "Activate Pro"}
+            </button>
             <OnlineAvatars users={onlineUsers} isPro={isPro} onClick={() => setShowOnlineUsers(v => !v)} theme={theme} currentUser={{ name: userName, email: userEmail }} />
             <button onClick={() => { setShowHistory(v => !v); setShowOnlineUsers(false); }}
               className={`flex items-center justify-center gap-1 px-2 py-1 rounded-lg transition-all cursor-pointer ${showHistory ? (theme === "light" ? "bg-blue-100 text-blue-600 border border-blue-300" : "bg-blue-600/20 text-blue-400 border border-blue-500/30") : (theme === "light" ? "text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-transparent" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-transparent")}`}

@@ -9,7 +9,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Sun, Moon, Plus, ChevronRight, ArrowLeft, AlertTriangle, Eye, EyeOff, Info, Shield,
-  Search, Lock, X,
+  Search, Lock, X, RefreshCw,
 } from "lucide-react";
 
 // ─── CONSTANTS ───
@@ -763,8 +763,8 @@ function AppInner() {
       setIsPro(true); setUserTaskCount(taskCount || 0); setUserResetDate(resetAt || null);
       setProExpiresAt(exp || null);
       persistProState(userEmailRef.current, { isPro: true, proExpiresAt: exp || null });
-      addToast("Pro activated!", "success");
       setShowActivatePro(false);
+      setShowProModal(false);
       setActivatePinInput("");
       setActivateError("");
       setActivateLoading(false);
@@ -773,8 +773,8 @@ function AppInner() {
 
     socket.on("pro_activate_error", (msg) => {
       setActivateLoading(false);
-      setActivateError(msg || "Invalid or expired PIN.");
-      addToast(msg || "Pro activation failed", "warn");
+      setActivateError(msg || "The PIN you entered is unauthorized. Please double-check the credentials.");
+      setShowActivatePro(true);
       activateSubmittingRef.current = false;
     });
 
@@ -1174,11 +1174,11 @@ function AppInner() {
   }, [isPro, proHydrating, userTaskCount, role, addToast]);
 
   const handleProActivated = useCallback((proPin) => {
-    setIsPro(true);
-    setShowProModal(false);
-    persistProState(userEmailRef.current, { isPro: true, proPin, proExpiresAt: proExpiresAt || null });
-    socket.emit("set_user_pro", { email: userEmail, proPin });
-  }, [userEmail, proExpiresAt]);
+    const pin = String(proPin || "").trim();
+    if (!pin || activateSubmittingRef.current) return;
+    activateSubmittingRef.current = true;
+    socket.emit("set_user_pro", { email: userEmail, proPin: pin });
+  }, [userEmail]);
 
   const submitActivatePin = useCallback(() => {
     const pin = activatePinInput.trim();
@@ -1634,26 +1634,36 @@ function AppInner() {
                 </button>
               </div>
 
-              <input type="text" autoComplete="off" placeholder="Enter 14-digit PIN" maxLength={14} autoFocus
-                className={`w-full p-3.5 rounded-xl border font-mono tracking-widest text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm mb-3 ${T.input}`}
-                value={activatePinInput}
-                onChange={e => { setActivatePinInput(e.target.value.replace(/\s/g, "")); setActivateError(""); }}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitActivatePin(); } }}
-              />
-
-              {activateError && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 mb-3">
-                  <AlertTriangle size={13} className="text-red-400 shrink-0" />
-                  <p className="text-[10px] text-red-400 font-bold">{activateError}</p>
+              {activateError ? (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 44, height: 44, margin: "0 auto 14px", borderRadius: "50%", background: "rgba(240,87,107,0.12)", border: "1px solid rgba(240,87,107,0.28)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Lock size={19} style={{ color: "#F0576B" }} />
+                  </div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#ECEEF2", marginBottom: 8, fontFamily: "'Space Grotesk', sans-serif" }}>Unauthorized PIN</p>
+                  <p style={{ fontSize: 12.5, color: "#8A90A0", lineHeight: 1.5, marginBottom: 20 }}>{activateError}</p>
+                  <button
+                    onClick={() => { setActivateError(""); setActivatePinInput(""); }}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2">
+                    Try Again
+                    <RefreshCw size={14} />
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <input type="text" autoComplete="off" placeholder="Enter 14-digit PIN" maxLength={14} autoFocus
+                    className={`w-full p-3.5 rounded-xl border font-mono tracking-widest text-center outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm mb-3 ${T.input}`}
+                    value={activatePinInput}
+                    onChange={e => setActivatePinInput(e.target.value.replace(/\s/g, ""))}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submitActivatePin(); } }}
+                  />
+                  <button
+                    onClick={submitActivatePin}
+                    disabled={!activatePinInput.trim() || activateLoading}
+                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer">
+                    {activateLoading ? "Verifying…" : "Activate"}
+                  </button>
+                </>
               )}
-
-              <button
-                onClick={submitActivatePin}
-                disabled={!activatePinInput.trim() || activateLoading}
-                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 cursor-pointer">
-                {activateLoading ? "Verifying…" : "Activate"}
-              </button>
             </motion.div>
           </motion.div>
         )}
@@ -1719,6 +1729,13 @@ function AppInner() {
         handleLeave={handleLeave}
         handleDeleteWorkspace={handleDeleteWorkspace}
         setShowProModal={setShowProModal}
+        onActivatePro={() => setShowActivatePro(true)}
+        onDeactivatePro={() => {
+          clearPersistedProState(userEmail);
+          setIsPro(false);
+          setProExpiresAt(null);
+          socket.emit("deactivate_pro", { email: userEmail });
+        }}
         tasks={tasks}
         progress={progress}
         showMobileMenu={showMobileMenu}
