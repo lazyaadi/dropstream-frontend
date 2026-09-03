@@ -1766,7 +1766,15 @@ function AppInner() {
           setShowHistory={setShowHistory}
           setShowMembers={setShowMembers}
           setShowOnlineUsers={setShowOnlineUsers}
-          onOpenProModal={openUpgradeProModal}
+                    onOpenProModal={openUpgradeProModal}
+          onActivatePro={() => { setShowMobileMenu(false); setShowActivatePro(true); }}
+          onDeactivatePro={() => {
+            setShowMobileMenu(false);
+            clearPersistedProState(userEmail);
+            setIsPro(false);
+            setProExpiresAt(null);
+            socket.emit("deactivate_pro", { email: userEmail });
+          }}
           handleLeave={handleLeave}
           onDeleteWorkspace={handleDeleteWorkspace}
           setIsMenuOpen={setShowMobileMenu}

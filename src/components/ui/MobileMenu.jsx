@@ -1,5 +1,5 @@
 import React from "react";
-import { X, History, Users, Moon, LogOut, ChevronRight, Volume2, VolumeX, Lock , Trash2 } from "lucide-react";
+import { X, History, Users, Moon, LogOut, ChevronRight, Trash2, Lock } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MobileMenu = ({
@@ -19,6 +19,8 @@ const MobileMenu = ({
   setShowMembers,
   setShowOnlineUsers,
   onOpenProModal,
+  onActivatePro,
+  onDeactivatePro,
   handleLeave,
   setIsMenuOpen,
   soundEnabled,
@@ -194,6 +196,19 @@ const MobileMenu = ({
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className={`text-sm font-medium ${T.text}`}>Who&apos;s Online</p>
+                </div>
+                <ChevronRight size={18} className={T.subText} />
+              </button>
+
+              <button
+                onClick={isPro ? onDeactivatePro : onActivatePro}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg transition box-border ${theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-700/50"}`}
+              >
+                <div className={`p-2 rounded-lg ${isPro ? (theme === "light" ? "bg-red-100" : "bg-red-500/15") : (theme === "light" ? "bg-amber-100" : "bg-amber-500/15")}`}>
+                  <Lock size={20} className={isPro ? (theme === "light" ? "text-red-600" : "text-red-400") : (theme === "light" ? "text-amber-600" : "text-amber-400")} />
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <p className={`text-sm font-medium ${T.text}`}>{isPro ? "Deactivate Pro" : "Activate Pro"}</p>
                 </div>
                 <ChevronRight size={18} className={T.subText} />
               </button>
