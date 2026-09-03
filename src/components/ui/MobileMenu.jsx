@@ -1,5 +1,5 @@
 import React from "react";
-import { X, History, Users, Moon, LogOut, ChevronRight, Trash2, Lock } from "lucide-react";
+import { X, History, Users, Moon, LogOut, ChevronRight, Trash2, Lock, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MobileMenu = ({
