@@ -28,7 +28,8 @@ const Navbar = ({
   progress,
   showMobileMenu,
   setShowMobileMenu,
-  
+  soundEnabled,
+  onToggleSound,
 }) => {
   return (
     <nav className={`relative z-40 ${T.nav} backdrop-blur-xl sticky top-0 shadow-lg`}>

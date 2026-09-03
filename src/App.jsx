@@ -878,6 +878,8 @@ function AppInner() {
       } else {
         setError(msg);
       }
+      setWorkspaceStepLoading(false);
+      setBoardHydrating(false);
     });
 
     socket.on("join_locked_out", ({ unlockAt } = {}) => {
