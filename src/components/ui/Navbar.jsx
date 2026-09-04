@@ -48,71 +48,87 @@ const Navbar = ({
             </div>
           </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-4">
-            <span className={`hidden sm:inline-flex items-center ml-2 px-3.5 py-1 rounded-md border text-[8px] font-black font-mono tracking-widest shrink-0 ${theme === "light" ? "bg-gray-50 border-gray-300 text-gray-400" : "bg-slate-700/50 border-slate-600 text-slate-400"}`}>
+          {/* Desktop Nav — zone 1: workspace tag */}
+          <div className="hidden md:flex items-center gap-3.5">
+            <div className={`w-px h-5 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
+            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${theme === "light" ? "bg-white border-gray-200 text-gray-500" : "bg-slate-800/60 border-slate-700/60 text-slate-400"}`}>
+              <span className="w-[5px] h-[5px] rounded-full bg-emerald-400" />
               #{workspaceName}
             </span>
-            {isPro && (
-              <div className="flex items-center gap-2 shrink-0">
-                {proExpiryLabel && (
-                  <span className={`hidden sm:inline-flex text-[10px] font-bold ${T.label} whitespace-nowrap`}>
-                    Pro expires on {proExpiryLabel}
-                  </span>
-                )}
-                <button onClick={() => setShowProModal(true)} 
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 transition cursor-pointer"
-                  title="Pro features">
-                  <span className="text-[7px] font-black text-amber-400 uppercase tracking-wider">PRO</span>
-                </button>
-              </div>
-            )} 
-            <button onClick={isPro ? onDeactivatePro : onActivatePro}
-              className={`hidden sm:inline-flex items-center px-2 py-1 rounded-lg border text-[7px] font-black uppercase tracking-wider transition cursor-pointer shrink-0
-                ${isPro
-                  ? (theme === "light" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-red-500/30 text-red-400 hover:bg-red-500/10")
-                  : (theme === "light" ? "border-amber-300 text-amber-700 hover:bg-amber-50" : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10")}`}
-              title={isPro ? "Deactivate Pro" : "Activate Pro"}>
-              {isPro ? "Deactivate" : "Activate Pro"}
-            </button>
-            <OnlineAvatars users={onlineUsers} isPro={isPro} onClick={() => setShowOnlineUsers(v => !v)} theme={theme} currentUser={{ name: userName, email: userEmail }} />
-            <button onClick={() => { setShowHistory(v => !v); setShowOnlineUsers(false); }}
-              className={`flex items-center justify-center gap-1 px-2 py-1 rounded-lg transition-all cursor-pointer ${showHistory ? (theme === "light" ? "bg-blue-100 text-blue-600 border border-blue-300" : "bg-blue-600/20 text-blue-400 border border-blue-500/30") : (theme === "light" ? "text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-transparent" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-transparent")}`}
-              title="View History">
-              <History size={14} />
-              <span className="text-[8px] font-black uppercase tracking-widest">Log</span>
-              {!isPro && <Lock size={10} className="opacity-60"/>}
-            </button>
-            <button onClick={() => setShowMembers(v => !v)}
-              className={`flex items-center justify-center gap-1 px-2 py-1 rounded-lg transition-all cursor-pointer ${showMembers ? (theme === "light" ? "bg-purple-100 text-purple-600 border border-purple-300" : "bg-purple-600/20 text-purple-400 border border-purple-500/30") : (theme === "light" ? "text-gray-600 hover:text-gray-900 hover:bg-gray-200 border border-transparent" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-transparent")}`}
-              title="View Team">
-              <Users size={14} />
-              <span className="text-[8px] font-black uppercase tracking-widest">Team</span>
-              {!isPro && <Lock size={10} className="opacity-50"/>}
-            </button>
           </div>
 
-          {/* User Info and Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop Nav — zone 2: links, activate, presence */}
+          <div className="hidden md:flex items-center gap-1.5">
+            <button onClick={() => { setShowHistory(v => !v); setShowOnlineUsers(false); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-[12px] ${showHistory ? (theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-600/20 text-blue-400") : (theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800/80")}`}
+              title="View History">
+              <History size={14} />
+              <span>Log</span>
+              {!isPro && (
+                <span className={`w-[13px] h-[13px] rounded-full flex items-center justify-center -ml-0.5 ${theme === "light" ? "bg-gray-200 text-gray-500" : "bg-slate-700 text-slate-400"}`}>
+                  <Lock size={7} />
+                </span>
+              )}
+            </button>
+            <button onClick={() => setShowMembers(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-[12px] ${showMembers ? (theme === "light" ? "bg-purple-100 text-purple-600" : "bg-purple-600/20 text-purple-400") : (theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800/80")}`}
+              title="View Team">
+              <Users size={14} />
+              <span>Team</span>
+              {!isPro && (
+                <span className={`w-[13px] h-[13px] rounded-full flex items-center justify-center -ml-0.5 ${theme === "light" ? "bg-gray-200 text-gray-500" : "bg-slate-700 text-slate-400"}`}>
+                  <Lock size={7} />
+                </span>
+              )}
+            </button>
+
+            <div className={`w-px h-5 mx-1 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
+
+            {isPro && (
+              <button onClick={() => setShowProModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 transition cursor-pointer"
+                title={proExpiryLabel ? `Pro expires on ${proExpiryLabel}` : "Pro features"}>
+                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">PRO</span>
+              </button>
+            )}
+            <button onClick={isPro ? onDeactivatePro : onActivatePro}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-bold uppercase tracking-wide transition cursor-pointer whitespace-nowrap
+                ${isPro
+                  ? (theme === "light" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-red-500/35 text-red-400 hover:bg-red-500/10")
+                  : (theme === "light" ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100" : "bg-amber-500/10 border-amber-500/35 text-amber-400 hover:bg-amber-500/15")}`}
+              title={isPro ? "Deactivate Pro" : "Activate Pro"}>
+              {!isPro && (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.8 6.7L22 9.3l-5.3 4.9L18 22l-6-3.6L6 22l1.3-7.8L2 9.3l7.2-.6z"/></svg>
+              )}
+              {isPro ? "Deactivate" : "Activate Pro"}
+            </button>
+
+            <OnlineAvatars users={onlineUsers} isPro={isPro} onClick={() => setShowOnlineUsers(v => !v)} theme={theme} currentUser={{ name: userName, email: userEmail }} />
+          </div>
+
+          {/* Desktop Nav — zone 3: theme, sound, user */}
+          <div className="hidden md:flex items-center gap-1.5">
             <button onClick={toggleTheme}
-              className={`flex items-center justify-center p-2 rounded-lg border transition cursor-pointer ${theme === "dark" ? "bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:border-slate-600 hover:bg-slate-800/60" : "bg-gray-100 border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-200"}`}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg transition cursor-pointer ${theme === "dark" ? "text-slate-400 hover:bg-slate-800/60" : "text-gray-500 hover:bg-gray-100"}`}
               title="Toggle theme">
-              {theme === "dark" ? <Sun size={14}/> : <Moon size={14}/>}
+              {theme === "dark" ? <Sun size={15}/> : <Moon size={15}/>}
             </button>
             <button onClick={() => { if (!isPro) { setShowProModal(true); return; } onToggleSound?.(); }}
-              className={`flex items-center justify-center p-2 rounded-lg border transition cursor-pointer relative ${theme === "dark" ? "bg-slate-800/40 border-slate-700/50 text-slate-300 hover:border-slate-600 hover:bg-slate-800/60" : "bg-gray-100 border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-200"}`}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg transition cursor-pointer relative ${theme === "dark" ? "text-slate-400 hover:bg-slate-800/60" : "text-gray-500 hover:bg-gray-100"}`}
               title={isPro ? (soundEnabled ? "Mute live alerts" : "Unmute live alerts") : "Pro feature — live alert sounds"}>
-              {soundEnabled ? <Volume2 size={14}/> : <VolumeX size={14}/>}
-              {!isPro && <Lock size={9} className="absolute -top-1 -right-1 opacity-70"/>}
+              {soundEnabled ? <Volume2 size={15}/> : <VolumeX size={15}/>}
+              {!isPro && <Lock size={9} className="absolute -top-0.5 -right-0.5 opacity-70"/>}
             </button>
-            
-            <div className={`flex items-center gap-2 pl-3 border-l ${T.divider}`}>
-              <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-black text-white shrink-0">
+
+            <div className={`w-px h-5 mx-1 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
+
+            <div className="flex items-center gap-2">
+              <div className="w-[30px] h-[30px] rounded-full bg-blue-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className={`text-xs font-bold ${T.text} leading-none`}>{userName}</p>
-                <p className={`text-[9px] font-black uppercase mt-1 ${role === "admin" ? "text-purple-500" : "text-blue-500"}`}>{role}</p>
+                <p className={`text-[12.5px] font-semibold ${T.text} leading-none`}>{userName}</p>
+                <p className={`text-[9px] font-bold uppercase mt-1 tracking-wide ${role === "admin" ? "text-purple-500" : "text-blue-500"}`}>{role}</p>
               </div>
             </div>
             <button onClick={handleLeave}

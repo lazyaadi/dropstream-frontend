@@ -1175,6 +1175,20 @@ function AppInner() {
     setShowAdd(true);
   }, [isPro, proHydrating, userTaskCount, role, addToast]);
 
+    useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable;
+      if (isTyping) return;
+      if (e.key.toLowerCase() === "n" && isJoined && !showAdd) {
+        e.preventDefault();
+        tryOpenAdd();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isJoined, showAdd, tryOpenAdd]);
+
   const handleProActivated = useCallback((proPin) => {
     const pin = String(proPin || "").trim();
     if (!pin || activateSubmittingRef.current) return;
@@ -1420,7 +1434,14 @@ function AppInner() {
                     </button>
                   </div>
                 </div>
-                {authError && (
+                {authError && authError.includes("Sign in with Google") ? (
+                  <div className="rounded-xl p-3.5" style={{ background: "rgba(217,164,65,0.12)", border: "1px solid rgba(217,164,65,0.28)" }}>
+                    <p className="text-[12px] font-semibold mb-1" style={{ color: "#D9A441" }}>Forgot your password?</p>
+                    <p className="text-[11px] leading-relaxed" style={{ color: "#8A90A0" }}>
+                      Too many failed attempts. Use the <b style={{ color: "#D9A441" }}>Sign in with Google</b> button below to access your account instead.
+                    </p>
+                  </div>
+                ) : authError && (
                   <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
                     <AlertTriangle size={13} className="text-red-400 shrink-0" />
                     <p className="text-[10px] text-red-400 font-bold">{authError}</p>
