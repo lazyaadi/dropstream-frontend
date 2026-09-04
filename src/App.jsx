@@ -785,6 +785,9 @@ function AppInner() {
       addToast("Pro deactivated", "warn");
     });
 
+    socket.on("set_password_success", (msg) => addToast(msg || "Password set!", "success"));
+    socket.on("set_password_error", (msg) => addToast(msg || "Could not set password", "warn"));
+
        socket.on("load_workspace", ({ tasks: t, projectName: pn, role: r, history: h, members: m, taskCount, resetAt, isPro: sp, proExpiresAt: exp }) => {
       setProHydrating(false);
       setTasks(t || []); setProjectName(pn); setIsJoined(true); setAutoJoining(false);
@@ -924,6 +927,7 @@ function AppInner() {
         "receive_update", "users_update", "members_update", "history_update",
         "history_cleared", "pro_activate_error", "pro_deactivated", "pro_deactivate_error",
         "error_msg", "permission_denied", "kicked", "typing_update", "typing_clear", "reconnect",
+        "set_password_success", "set_password_error",
       ];
 
       socketEvents.forEach(ev => socket.off(ev));
