@@ -34,7 +34,7 @@ const Navbar = ({
   return (
     <nav className={`relative z-40 ${T.nav} backdrop-blur-xl sticky top-0 shadow-lg`}>
       <div className="px-4 sm:px-6 py-3">
-        <div className="flex items-center justify-between">
+        <div className="relative flex items-center justify-between">
           {/* Logo and Project Name */}
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${theme === "light" ? "bg-blue-100 border-blue-300" : "bg-blue-600/15 border-blue-500/25"}`}>
@@ -46,19 +46,15 @@ const Navbar = ({
               <p className="text-[8px] font-semibold text-blue-500 uppercase tracking-[0.24em] leading-none">SyncBoard</p>
               <h1 className={`text-sm font-semibold ${T.text} leading-snug tracking-tight mt-1`}>{projectName}</h1>
             </div>
-          </div>
-
-          {/* Desktop Nav — zone 1: workspace tag */}
-          <div className="hidden md:flex items-center gap-3.5">
-            <div className={`w-px h-5 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
-            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${theme === "light" ? "bg-white border-gray-200 text-gray-500" : "bg-slate-800/60 border-slate-700/60 text-slate-400"}`}>
+            <div className={`hidden md:block w-px h-5 mx-1 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
+            <span className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono border ${theme === "light" ? "bg-white border-gray-200 text-gray-500" : "bg-slate-800/60 border-slate-700/60 text-slate-400"}`}>
               <span className="w-[5px] h-[5px] rounded-full bg-emerald-400" />
               #{workspaceName}
             </span>
           </div>
 
           {/* Desktop Nav — zone 2: links, activate, presence */}
-          <div className="hidden md:flex items-center gap-1.5">
+          <div className="hidden md:flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
             <button onClick={() => { setShowHistory(v => !v); setShowOnlineUsers(false); }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-[12px] ${showHistory ? (theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-600/20 text-blue-400") : (theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800/80")}`}
               title="View History">
