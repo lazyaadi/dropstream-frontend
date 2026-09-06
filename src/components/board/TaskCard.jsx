@@ -79,47 +79,46 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         ${isDragging ? "z-0" : "transition-shadow duration-200"}
         ${isOverdue ? (theme === "light" ? "border-red-300 bg-red-50 shadow-red-100" : "border-red-500/50 shadow-red-900/20 bg-red-950/20") : ""}`}
     >
-      {canEdit && (
-                  <div className={`absolute top-2.5 right-2.5 ${isDone ? "sm:right-16" : ""} flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all`}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm backdrop-blur-sm
-              ${theme === "light" ? "border-gray-200 bg-white/90 text-gray-500 hover:text-red-500 hover:bg-red-50" : "border-slate-700/60 bg-slate-900/85 text-slate-300 hover:text-red-300 hover:bg-red-500/15"}`}
-            title="Delete task"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      )}
-      {isOverdue && isPro && (
-        <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg border ${theme === "light" ? "bg-red-50 border-red-200" : "bg-red-500/10 border-red-500/20"}`}>
-          <AlertTriangle size={9} className="text-red-500 shrink-0" />
-          <span className="text-[8px] sm:text-[9px] font-black text-red-500 uppercase tracking-widest">Overdue</span>
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
+      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
         {isDone && (
-          <div className="absolute top-3 right-3 hidden sm:flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5 mr-1">
             <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} style={{ boxShadow: statusMeta.shadow }} />
             <span className={`text-[10px] font-medium tracking-wide ${statusMeta.color}`}
               style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{statusMeta.label}</span>
           </div>
         )}
-
-        <div className={`flex items-start justify-between gap-2 ${isDone ? "sm:pr-14" : ""} pr-7`}>
+        <button
+          {...(canEdit ? { ...attributes, ...listeners } : {})}
+          className={`shrink-0 p-1 rounded transition-colors touch-none
+            ${canEdit
+              ? `${theme === "light" ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-slate-500 hover:text-slate-300 hover:bg-slate-700/50"} cursor-grab active:cursor-grabbing`
+              : `${theme === "light" ? "text-gray-300" : "text-slate-700"} cursor-not-allowed`}`}
+          disabled={!canEdit}
+          aria-label="Drag task"
+        ><DotsIcon /></button>
+        {canEdit && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+            className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover:opacity-100
+              ${theme === "light" ? "border-gray-200 bg-white/90 text-gray-500 hover:text-red-500 hover:bg-red-50" : "border-slate-700/60 bg-slate-900/85 text-slate-300 hover:text-red-300 hover:bg-red-500/15"}`}
+            title="Delete task"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+      {isOverdue && isPro && (
+        <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg border pr-14 ${theme === "light" ? "bg-red-50 border-red-200" : "bg-red-500/10 border-red-500/20"}`}>
+          <AlertTriangle size={9} className="text-red-500 shrink-0" />
+          <span className="text-[8px] sm:text-[9px] font-black text-red-500 uppercase tracking-widest">Overdue</span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
           <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border ${theme === "light" ? p.pillLight : p.pill}`}>
             <span className={`w-[3px] h-3 rounded-sm ${p.bar}`} />
             {p.label}
           </span>
-          <button
-            {...(canEdit ? { ...attributes, ...listeners } : {})}
-            className={`shrink-0 p-1 rounded transition-colors touch-none
-              ${canEdit
-                ? `${theme === "light" ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100" : "text-slate-500 hover:text-slate-300 hover:bg-slate-700/50"} cursor-grab active:cursor-grabbing`
-                : `${theme === "light" ? "text-gray-300" : "text-slate-700"} cursor-not-allowed`}`}
-            disabled={!canEdit}
-            aria-label="Drag task"
-          ><DotsIcon /></button>
         </div>
 
         <div className="flex sm:hidden items-center gap-1.5 mt-2.5">
