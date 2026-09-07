@@ -1593,7 +1593,7 @@ function AppInner() {
                       <div className="relative">
                         <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Enter password"
                           className={`w-full p-2.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
-                          value={wsPin} onChange={e => setWsPin(e.target.value)}
+                          value={wsPin} onChange={e => { setWsPin(e.target.value); setError(""); }}
                           onKeyDown={e => { if (e.key === "Enter" && view !== "create") handleAction(); }}
                         />
                         <button type="button" onClick={() => setShowWsPin(v => !v)}
@@ -1608,7 +1608,7 @@ function AppInner() {
                         <div className="relative">
                           <input type={showWsPin ? "text" : "password"} autoComplete="off" placeholder="Confirm password"
                             className={`w-full p-2.5 pr-12 rounded-xl border outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm ${T.input}`}
-                            value={wsPinConfirm} onChange={e => setWsPinConfirm(e.target.value)}
+                            value={wsPinConfirm} onChange={e => { setWsPinConfirm(e.target.value); setError(""); }}
                             onKeyDown={e => { if (e.key === "Enter") handleAction(); }}
                           />
                           <button type="button" onClick={() => setShowWsPin(v => !v)}
