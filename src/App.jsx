@@ -112,6 +112,20 @@ const loadGoogleIdentityScript = () => {
 const normEmail = (e) => (e || "").trim().toLowerCase();
 const normName = (n) => (n || "").trim();
 
+const exchangeSessionTicket = async (ticket) => {
+  if (!ticket) return;
+  try {
+    await fetch(`${SERVER_URL}/api/session/exchange`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ticket }),
+    });
+  } catch (err) {
+    console.warn("[session] Failed to exchange session ticket:", err?.message || err);
+  }
+};
+
 const validateEmail = (e) => {
   if (!e?.trim()) return "Email is required.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())) return "Enter a valid email.";
@@ -714,6 +728,7 @@ function AppInner() {
 
     socket.on("auth_success", (data) => {
       setAuthLoading(false); setAuthError(""); setAuthMethod("password"); setAutoJoining(false); pendingGoogleAuthTokenRef.current = "";
+      if (data.sessionTicket) exchangeSessionTicket(data.sessionTicket);
       const serverIsPro = !!data.isPro;
       const serverProExpiresAt = data.proExpiresAt || null;
       localStorage.setItem(LAST_AUTH_EMAIL_KEY, normEmail(data.email || userEmailRef.current || userEmail || ""));
@@ -826,6 +841,20 @@ function AppInner() {
       }));
     });
 
+    socket.on("session_ticket", ({ ticket } = {}) => {
+      if (ticket) exchangeSessionTicket(ticket);
+    });
+
+    socket.on("session_expired", () => {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(WORKSPACE_SESSION_KEY);
+      setAutoJoining(false);
+      setProfileHydrating(false);
+      setBoardHydrating(false);
+      setIsJoined(false);
+      setAuthReady(false);
+    });
+
     socket.on("receive_update", ({ tasks: updated, history: h }) => {
       setTasks(updated || []);
       finishBoardHydrationRef.current();
@@ -929,6 +958,7 @@ function AppInner() {
       const socketEvents = [
         "connect", "auth_success", "auth_error", "auth_google_error",
         "task_count_update", "task_limit_reached", "pro_activated", "load_workspace",
+        "session_ticket", "session_expired",
         "receive_update", "users_update", "members_update", "history_update",
         "history_cleared", "pro_activate_error", "pro_deactivated", "pro_deactivate_error",
         "error_msg", "permission_denied", "kicked", "typing_update", "typing_clear", "reconnect",
