@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Lock, Clock, Check, RefreshCw } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
 
-export default function WorkspaceErrorModal({ type, wsName, unlockAt, onClose, theme }) {
+export default function WorkspaceErrorModal({ type, wsName, unlockAt, attemptsRemaining, onClose, theme }) {
   const T = theme === "light" ? TL : TD;
   const isNotFound = type === "notFound";
   const isLockedOut = type === "lockedOut";
@@ -139,16 +139,9 @@ export default function WorkspaceErrorModal({ type, wsName, unlockAt, onClose, t
           <div className="flex items-center gap-2 mb-5 px-1">
             <Clock size={13} style={{ color: "#D9A441", opacity: 0.85, flexShrink: 0 }} />
             <p className="text-[11.5px] leading-snug" style={{ color: "#8A90A0" }}>
-              3 wrong attempts will temporarily lock this workspace for everyone.
-            </p>
-          </div>
-        )}
-
-        {!isNotFound && (
-          <div className="flex items-center gap-2 mb-5 px-1">
-            <Clock size={13} style={{ color: "#D9A441", opacity: 0.85, flexShrink: 0 }} />
-            <p className="text-[11.5px] leading-snug" style={{ color: "#8A90A0" }}>
-              3 wrong attempts will temporarily lock this workspace.
+              {typeof attemptsRemaining === "number"
+                ? `${attemptsRemaining} more wrong ${attemptsRemaining === 1 ? "attempt" : "attempts"} will temporarily block you from this workspace.`
+                : "3 wrong attempts will temporarily block you from this workspace."}
             </p>
           </div>
         )}

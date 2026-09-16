@@ -453,6 +453,7 @@ function AppInner() {
    const [handleStatus, setHandleStatus]     = useState(null);
   const [wsErrorName, setWsErrorName]       = useState("");
   const [wsUnlockAt, setWsUnlockAt]         = useState(null);
+  const [wsAttemptsRemaining, setWsAttemptsRemaining] = useState(null);
 
   const isProRef    = useRef(isPro);
   const effectiveIsProRef = useRef(isPro);
@@ -885,6 +886,10 @@ function AppInner() {
       setBoardHydrating(false);
     });
 
+    socket.on("join_wrong_password", ({ attemptsRemaining } = {}) => {
+      setWsAttemptsRemaining(typeof attemptsRemaining === "number" ? attemptsRemaining : null);
+    });
+
     socket.on("join_locked_out", ({ unlockAt } = {}) => {
       setAutoJoining(false);
       setWorkspaceStepLoading(false);
@@ -1020,7 +1025,7 @@ function AppInner() {
       password: wsPin, projectName, userName: customName, name: customName,
       email: userEmail, isCreating,
     });
-  }, [authReady, workspaceName, wsPin, view, projectName, userName, userEmail]);
+  }, [authReady, workspaceName, wsPin, wsPinConfirm, view, projectName, userName, userEmail]);
 
   useEffect(() => {
     if (view !== "create" || workspaceName.length < 3) {
@@ -1338,7 +1343,7 @@ function AppInner() {
 
         <AnimatePresence>
           {error && <ErrorModal key="error-modal" message={error} theme={theme} onClose={() => { setError(""); setView("start"); setWorkspaceName(""); setWsPin(""); }} />}
-          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setWsPin(""); setWsPinConfirm(""); }} />}
+          {wsErrorType && <WorkspaceErrorModal key="ws-error-modal" type={wsErrorType} wsName={wsErrorName} unlockAt={wsUnlockAt} attemptsRemaining={wsAttemptsRemaining} theme={theme} onClose={() => { setWsErrorType(null); setWsUnlockAt(null); setWsAttemptsRemaining(null); setWsPin(""); setWsPinConfirm(""); }} />}
           {showAbout && <AboutModal key="about-modal" onClose={() => setShowAbout(false)} theme={theme} />}
           {showContact && (
             <ContactModal
