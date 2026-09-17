@@ -1082,6 +1082,7 @@ function AppInner() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(WORKSPACE_SESSION_KEY);
     sessionStorage.removeItem("sb_workspace_pin");
+    fetch(`${SERVER_URL}/api/session/logout`, { method: "POST", credentials: "include" }).catch(() => {});
 
     if (workspaceName) {
       socket.emit("leave_room", { workspaceName, email: userEmail });
