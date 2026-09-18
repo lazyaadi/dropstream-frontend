@@ -342,6 +342,8 @@ function AppInner() {
   const [userTaskCount, setUserTaskCount] = useState(0);
   const [userResetDate, setUserResetDate] = useState(null);
   const [proExpiresAt, setProExpiresAt]   = useState(() => persistedProState.proExpiresAt);
+  const [isSocketConnected, setIsSocketConnected] = useState(socket.connected);
+
 
   const [showAdd, setShowAdd]               = useState(false);
   const [showHistory, setShowHistory]       = useState(false);
@@ -702,6 +704,7 @@ function AppInner() {
 
   useEffect(() => {
     socket.on("connect", () => {
+      setIsSocketConnected(true);
       if (!isJoined) { setError(""); setAuthError(""); }
 
       if (pendingGoogleAuthTokenRef.current) {
@@ -724,6 +727,10 @@ function AppInner() {
           }
         } catch {}
       }
+    });
+
+    socket.on("disconnect", () => {
+      setIsSocketConnected(false);
     });
 
     socket.on("auth_success", (data) => {
@@ -1217,11 +1224,12 @@ function AppInner() {
   }, [tasks, workspaceName]);
 
      const tryOpenAdd = useCallback(() => {
+    if (!isSocketConnected) { addToast("Reconnecting — try again in a moment", "warn"); return; }
     const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     if (role !== "member" && role !== "admin") { addToast("Only members/admins can add tasks", "warn"); return; }
     setShowAdd(true);
-  }, [isPro, proHydrating, userTaskCount, role, addToast]);
+  }, [isSocketConnected, isPro, proHydrating, userTaskCount, role, addToast]);
 
     useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1714,11 +1722,21 @@ function AppInner() {
     );
   }
 
-  return (
+return (
     <div className={`relative min-h-screen ${T.bg} ${T.text} font-sans pb-safe`}>
       
       <ToastContainer toasts={toasts} />
 
+      {!isSocketConnected && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/10 border-b border-amber-500/40 text-amber-300 text-sm text-center py-2 px-4">
+          Reconnecting to the server… changes won't save until this reconnects.
+        </div>
+      )}
+      {!isSocketConnected && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/10 border-b border-amber-500/40 text-amber-300 text-sm text-center py-2 px-4">
+          Reconnecting to the server… changes won't save until this reconnects.
+        </div>
+      )}
       <AnimatePresence>
         {actionBanner && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
         {liveAction && <LiveActionCard key={liveAction.__uid || liveAction.id || liveAction.timestamp || liveAction.taskTitle} entry={liveAction} onDismiss={() => setLiveAction(null)} theme={theme} />}
@@ -1900,8 +1918,8 @@ function AppInner() {
 
             {(role === "member" || role === "admin") && (
               <button onClick={tryOpenAdd}
-                title="Press 'N' to add task"
-                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer shadow-lg shadow-blue-900/30 active:scale-95 transition-all whitespace-nowrap">
+                title={isSocketConnected ? "Press 'N' to add task" : "Reconnecting…"}
+                className={`flex items-center gap-1.5 text-white px-3 sm:px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-900/30 active:scale-95 transition-all whitespace-nowrap ${isSocketConnected ? "bg-blue-600 hover:bg-blue-500 cursor-pointer" : "bg-blue-600/40 cursor-not-allowed"}`}>
                 <Plus size={12}/><span className="hidden sm:inline">New Task</span><span className="sm:hidden">Add</span>
                 <span className="hidden lg:inline text-[8px] opacity-60 ml-1 border border-white/20 px-1 py-0.5 rounded">N</span>
               </button>
