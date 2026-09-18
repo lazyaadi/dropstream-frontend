@@ -605,7 +605,7 @@ function AppInner() {
       return;
     }
 
-    const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
+     const activeSession = localStorage.getItem(WORKSPACE_SESSION_KEY);
     if (activeSession) {
       try {
         setProfileHydrating(true);
@@ -617,12 +617,11 @@ function AppInner() {
           setWorkspaceDisplayName(s.displayName || s.userName || "");
           if (s.projectName) setProjectName(s.projectName);
           if (s.role) setRole(s.role);
-          if (s.tasks) setTasks(s.tasks);
           if (s.members) setMembers(s.members);
           if (s.history) setHistory(s.history);
           if (s.taskCount !== undefined) setUserTaskCount(s.taskCount);
           if (s.resetAt !== undefined) setUserResetDate(s.resetAt);
-          setBoardHydrating(!(s.tasks && s.tasks.length > 0));
+          setBoardHydrating(true);
 
           (async () => {
             try {

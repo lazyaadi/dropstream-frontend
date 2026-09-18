@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Lock, Clock, AlertTriangle, X, Paperclip } from "lucide-react";
+import { Lock, Clock, AlertTriangle, X, Paperclip, ChevronDown, ChevronUp } from "lucide-react";
 import { PRIORITY, TD, TL } from "../../lib/constants";
 import { fmtFull, obfuscateText } from "../../lib/utils";
 import DotsIcon from "../ui/DotsIcon";
@@ -14,6 +14,8 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
   const pCls = theme === "light" ? p.clsLight : p.cls;
   const canEdit = role === "member" || role === "admin";
   const isDone = task.status === "done";
+  const [showFullTitle, setShowFullTitle] = useState(false);
+  const isLongTitle = (task.title || "").length > 60;
   const statusMeta = isDone
     ? { label: "DONE", color: theme === "light" ? "text-emerald-700" : "text-emerald-400", dot: theme === "light" ? "bg-emerald-600" : "bg-emerald-400", shadow: theme === "light" ? "0 0 0 3px rgba(5,150,105,0.12)" : "0 0 0 3px rgba(74,222,143,0.15)" }
     : task.status === "in-progress"
@@ -127,9 +129,21 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
             style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{statusMeta.label}</span>
         </div>
 
-        <p className={`mt-3 text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText}`}
-          style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.005em" }}>{task.title}</p>
-
+        <div className="mt-3">
+          <p
+            onClick={() => isLongTitle && setShowFullTitle(v => !v)}
+            className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText} ${isLongTitle ? "cursor-pointer" : ""} ${showFullTitle ? "" : "line-clamp-2"}`}
+            style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.005em" }}>
+            {task.title}
+          </p>
+          {isLongTitle && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowFullTitle(v => !v); }}
+              className={`flex items-center gap-0.5 mt-0.5 text-[10px] font-medium ${theme === "light" ? "text-gray-400 hover:text-gray-600" : "text-slate-500 hover:text-slate-300"}`}>
+              {showFullTitle ? <>Show less <ChevronUp size={10}/></> : <>Show more <ChevronDown size={10}/></>}
+            </button>
+          )}
+        </div>
         {task.description ? (
           <p className={`text-xs mt-1.5 leading-relaxed whitespace-pre-wrap break-words ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
             {task.description}
