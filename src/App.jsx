@@ -931,6 +931,15 @@ function AppInner() {
 
     socket.on("permission_denied", (msg) => addToast(msg || "Permission denied", "warn"));
 
+    socket.on("task_field_truncated", ({ truncatedTitleCount, truncatedDescCount, droppedInvalidCount, taskListCapped } = {}) => {
+      const parts = [];
+      if (truncatedTitleCount) parts.push(`${truncatedTitleCount} title${truncatedTitleCount > 1 ? "s" : ""} shortened`);
+      if (truncatedDescCount) parts.push(`${truncatedDescCount} description${truncatedDescCount > 1 ? "s" : ""} shortened`);
+      if (droppedInvalidCount) parts.push(`${droppedInvalidCount} invalid task${droppedInvalidCount > 1 ? "s" : ""} skipped`);
+      if (taskListCapped) parts.push("task list capped at 500");
+      addToast(parts.length ? parts.join(", ") : "Some task data was adjusted before saving", "warn");
+    });
+
     socket.on("kicked", (msg) => {
       localStorage.removeItem(SESSION_KEY);
       setError(msg || "You were removed from this workspace.");
@@ -961,8 +970,7 @@ function AppInner() {
         "session_ticket", "session_expired",
         "receive_update", "users_update", "members_update", "history_update",
         "history_cleared", "pro_activate_error", "pro_deactivated", "pro_deactivate_error",
-        "error_msg", "permission_denied", "kicked", "typing_update", "typing_clear", "reconnect",
-        "set_password_success", "set_password_error",
+        "error_msg", "permission_denied", "task_field_truncated", "kicked", "typing_update", "typing_clear", "reconnect",  "set_password_success", "set_password_error",
       ];
 
       socketEvents.forEach(ev => socket.off(ev));
