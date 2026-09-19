@@ -1150,8 +1150,9 @@ function AppInner() {
     setActiveTask(tasks.find(t => t.id === active.id) || null);
   };
 
-  const handleDragEnd = ({ active, over }) => {
+const handleDragEnd = ({ active, over }) => {
     setActiveTask(null);
+    if (!isSocketConnected || boardHydrating) { addToast("Still loading the board — try again in a moment", "warn"); return; }
     if (!over || (role !== "member" && role !== "admin")) return;
     let newStatus = over?.data?.current?.columnId;
     if (!newStatus && typeof over.id === "string" && over.id.startsWith("column-")) {
@@ -1177,11 +1178,11 @@ function AppInner() {
 
   const displayName = workspaceDisplayName || userName;
 
-   const addTask = useCallback((taskData) => {
+  const addTask = useCallback((taskData) => {
+    if (!isSocketConnected || boardHydrating) { addToast("Still loading the board — try again in a moment", "warn"); return; }
     const { title, description, priority, dueDate, image } = taskData;
     const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
-    if (userTaskCount >= limit) { setShowProModal(true); return; }
-    const taskId = `task-${Date.now()}`;
+    if (userTaskCount >= limit) { setShowProModal(true); return; }    const taskId = `task-${Date.now()}`;
     const safeCreatorName = displayName;
     const creatorInitials = safeCreatorName
       .split(" ")
@@ -1212,19 +1213,19 @@ function AppInner() {
     setTaskAddedPulse(true); setTimeout(() => setTaskAddedPulse(false), 1500);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "create_task", taskTitle: title }, newTaskId: taskId });
     setActionBanner({ action: "TASK CREATED" });
-  }, [tasks, isPro, userTaskCount, displayName, role, workspaceName]);
+   }, [tasks, isPro, userTaskCount, displayName, role, workspaceName, isSocketConnected, boardHydrating]);
 
-  const deleteTask = useCallback((taskId) => {
+ const deleteTask = useCallback((taskId) => {
+    if (!isSocketConnected || boardHydrating) { addToast("Still loading the board — try again in a moment", "warn"); return; }
     const task = tasks.find(t => t.id === taskId);
     const updated = tasks.filter(t => t.id !== taskId);
     setTasks(updated);
     socket.emit("update_tasks", { workspaceName, updatedTasks: updated, actionMeta: { action: "delete_task", taskTitle: task?.title || "" } });
     setActionBanner({ action: "TASK DELETED" });
-  }, [tasks, workspaceName]);
+   }, [tasks, workspaceName, isSocketConnected, boardHydrating]);
 
      const tryOpenAdd = useCallback(() => {
-    if (!isSocketConnected) { addToast("Reconnecting — try again in a moment", "warn"); return; }
-    const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
+    if (!isSocketConnected || boardHydrating) { addToast("Still loading the board - try again in a moment", "warn"); return; }    const limit = (isPro || proHydrating) ? PRO_TASK_LIMIT : FREE_TASK_LIMIT;
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     if (role !== "member" && role !== "admin") { addToast("Only members/admins can add tasks", "warn"); return; }
     setShowAdd(true);
