@@ -1949,7 +1949,7 @@ return (
               return (
                 <Column key={col.id} col={col}
                   tasks={colTasks}
-                  isLoading={boardHydrating && colTasks.length === 0 && !isProgressColumn}
+                   isLoading={boardHydrating && colTasks.length === 0}
                   onDelete={deleteTask} role={role}  isPro={effectiveIsPro} theme={theme}
                   onUpgrade={() => setShowProModal(true)}
                 />

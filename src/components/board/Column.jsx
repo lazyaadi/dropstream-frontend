@@ -35,14 +35,14 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
         className={`rounded-2xl p-3 flex-1 min-h-95 sm:min-h-125 border-2 transition-all duration-200 backdrop-blur-none md:backdrop-blur-sm ${isOver ? `${thisCol.ring} shadow-lg` : `${T.colBg} max-sm:${thisCol.mobileBorder}`}`}
       >
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {isLoading ? (
-            <>
+           {isLoading ? (
+            <div className="h-full flex flex-col gap-5 sm:gap-6">
               <TaskCardSkeleton theme={theme} />
               <TaskCardSkeleton theme={theme} />
               <TaskCardSkeleton theme={theme} />
-            </>
-          ) : (
-            tasks.map(t => (
+              <div className={`flex-1 rounded-2xl animate-pulse ${theme === "light" ? "bg-gray-100" : "bg-white/5"}`} />
+            </div>
+          ) : (            tasks.map(t => (
               <div key={t.id} className="mb-5 sm:mb-6 last:mb-0">
                 <TaskCard task={t} onDelete={onDelete} role={role} isPro={isPro} theme={theme} onUpgrade={onUpgrade} />
               </div>
