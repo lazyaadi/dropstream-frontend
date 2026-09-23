@@ -59,11 +59,11 @@ export default function WorkspaceErrorModal({ type, wsName, unlockAt, attemptsRe
 
           <h3 className="text-center text-[22px] font-semibold mb-2.5" style={{ color: "#ECEEF2", letterSpacing: "-0.01em" }}>Too many attempts</h3>
           <p className="text-center text-sm leading-relaxed mb-7" style={{ color: "#8A90A0" }}>
-            We've temporarily locked sign-in for{" "}
+            Your account is temporarily locked from joining any workspace, including{" "}
             <span className="inline-flex text-[12.5px] px-1.5 py-0.5 rounded" style={{ color: "#D9A441", background: "rgba(217,164,65,0.10)", border: "1px solid rgba(217,164,65,0.22)" }}>
               {wsName}
-            </span>{" "}
-            to protect the account. This happens automatically after repeated failed attempts.
+            </span>
+            . This happens automatically after repeated failed attempts.
           </p>
 
           <div className="h-[3px] rounded-full mb-5.5 overflow-hidden" style={{ background: "#1C1F29" }}>
@@ -140,8 +140,8 @@ export default function WorkspaceErrorModal({ type, wsName, unlockAt, attemptsRe
             <Clock size={13} style={{ color: "#D9A441", opacity: 0.85, flexShrink: 0 }} />
             <p className="text-[11.5px] leading-snug" style={{ color: "#8A90A0" }}>
               {typeof attemptsRemaining === "number"
-                ? `${attemptsRemaining} more wrong ${attemptsRemaining === 1 ? "attempt" : "attempts"} will temporarily block you from this workspace.`
-                : "3 wrong attempts will temporarily block you from this workspace."}
+                ? `${attemptsRemaining} more wrong ${attemptsRemaining === 1 ? "attempt" : "attempts"} will temporarily lock your account from joining any workspace.`
+                : "3 wrong attempts will temporarily lock your account from joining any workspace."}
             </p>
           </div>
         )}
