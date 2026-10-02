@@ -946,6 +946,13 @@ function AppInner() {
       addToast(parts.length ? parts.join(", ") : "Some task data was adjusted before saving", "warn");
     });
 
+    socket.on("task_image_rejected", ({ notPro, badFormat, tooLarge, boardFull } = {}) => {
+      if (notPro) addToast("Image attachments need Pro", "warn");
+      else if (tooLarge) addToast("Image too large — it wasn't attached", "warn");
+      else if (boardFull) addToast("Board image storage is full — image not attached", "warn");
+      else addToast("Image couldn't be attached (unsupported format)", "warn");
+    });
+
     socket.on("kicked", (msg) => {
       localStorage.removeItem(SESSION_KEY);
       setError(msg || "You were removed from this workspace.");
@@ -976,7 +983,7 @@ function AppInner() {
         "session_ticket", "session_expired",
         "receive_update", "users_update", "members_update", "history_update",
         "history_cleared", "pro_activate_error", "pro_deactivated", "pro_deactivate_error",
-        "error_msg", "permission_denied", "task_field_truncated", "kicked", "typing_update", "typing_clear", "reconnect",  "set_password_success", "set_password_error",
+        "error_msg", "permission_denied", "task_field_truncated", "task_image_rejected", "kicked", "typing_update", "typing_clear", "reconnect",  "set_password_success", "set_password_error",
       ];
 
       socketEvents.forEach(ev => socket.off(ev));
