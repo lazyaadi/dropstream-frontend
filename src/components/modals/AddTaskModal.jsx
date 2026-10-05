@@ -42,7 +42,7 @@ export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade }
 
   const handleAdd = () => {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), description: desc.trim(), priority, dueDate: dueDate || null, image: isPro ? "https://example.com/pic.png" : null });
+    onAdd({ title: title.trim(), description: desc.trim(), priority, dueDate: dueDate || null, image: isPro ? image : null });
     onClose();
   };
 
