@@ -1262,7 +1262,7 @@ const handleDragEnd = ({ active, over }) => {
     if (userTaskCount >= limit) { setShowProModal(true); return; }
     if (role !== "member" && role !== "admin") { addToast("Only members/admins can add tasks", "warn"); return; }
     setShowAdd(true);
-  }, [isSocketConnected, isPro, proHydrating, userTaskCount, role, addToast]);
+  }, [isSocketConnected, boardHydrating, isPro, proHydrating, userTaskCount, role, addToast]);
 
     useEffect(() => {
     const handleKeyDown = (e) => {
