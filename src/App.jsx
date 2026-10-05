@@ -276,7 +276,7 @@ const socket = io(
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    reconnectionAttempts: 10,
+    reconnectionAttempts: Infinity,
     timeout: 60000,
     transports: ["polling", "websocket"],
     forceNew: false,
@@ -598,6 +598,32 @@ function AppInner() {
   useEffect(() => {
     sessionStorage.removeItem("sb_workspace_pin");
   }, []);
+
+  useEffect(() => {
+    if (!boardHydrating || !isSocketConnected) return;
+    let ticks = 0;
+    const id = setInterval(() => {
+      ticks += 1;
+      if (ticks <= 2) {
+        try {
+          const s = JSON.parse(localStorage.getItem(WORKSPACE_SESSION_KEY) || "null");
+          if (s?.workspaceName && s?.userEmail && s?.userName) {
+            socket.emit("rejoin_workspace", { workspaceName: s.workspaceName, userName: s.userName, email: s.userEmail });
+          }
+        } catch {}
+        return;
+      }
+      clearInterval(id);
+      const last = Number(sessionStorage.getItem("sb_auto_reload_ts") || 0);
+      if (Date.now() - last > 5 * 60 * 1000) {
+        sessionStorage.setItem("sb_auto_reload_ts", String(Date.now()));
+        window.location.reload();
+      } else {
+        addToast("Couldn't load the board. Please reload the page.", "warn");
+      }
+    }, 12000);
+    return () => clearInterval(id);
+  }, [boardHydrating, isSocketConnected, addToast]);
 
   useEffect(() => {
     if (sessionStorage.getItem("sb_left_workspace") === "1") {
