@@ -256,6 +256,7 @@ import ContactModal from "./components/modals/ContactModal.jsx";
 import ProModal from "./components/modals/ProModal.jsx";
 import WorkspaceErrorModal from "./components/modals/WorkspaceErrorModal.jsx";
 import HistoryPanel from "./components/panels/HistoryPanel.jsx";
+import AIChatPanel from "./components/panels/AIChatPanel.jsx";
 import MembersPanel from "./components/panels/MembersPanel.jsx";
 import OnlineUsersPanel from "./components/panels/OnlineUsersPanel.jsx";
 import PinInput from "./components/ui/PinInput.jsx";
@@ -348,6 +349,7 @@ function AppInner() {
   const [showAdd, setShowAdd]               = useState(false);
   const [showHistory, setShowHistory]       = useState(false);
   const [showMembers, setShowMembers]       = useState(false);
+  const [showAI, setShowAI]                 = useState(false);
   const [showProModal, setShowProModal]     = useState(false);
   const [showOnlineUsers, setShowOnlineUsers] = useState(false);
   const [showAbout, setShowAbout]           = useState(false);
@@ -396,7 +398,7 @@ function AppInner() {
   const boardHydrateTimerRef = useRef(null);
   const finishBoardHydrationRef = useRef(() => {});
 
-  const overlayIsActive = showAdd || showHistory || showMembers || showProModal || showOnlineUsers || showAbout || showContact || showMobileMenu || deleteConfirmation.show;
+  const overlayIsActive = showAdd || showHistory || showMembers || showAI || showProModal || showOnlineUsers || showAbout || showContact || showMobileMenu || deleteConfirmation.show;
 
   // Mobile-only scroll locking designed for iOS Safari dynamic viewports
   useEffect(() => {
@@ -1794,6 +1796,7 @@ return (
                {activateProModal}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
         {showHistory && <HistoryPanel key="history-panel" history={history} isPro={effectiveIsPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
+        {showAI && <AIChatPanel key="ai-panel" onClose={() => setShowAI(false)} theme={theme} serverUrl={SERVER_URL} workspaceName={workspaceName} userEmail={userEmail} />}
         {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={effectiveIsPro} onUpgrade={openUpgradeProModal} theme={theme} />}
         {showOnlineUsers && (
           <OnlineUsersPanel key="online-users-panel"
@@ -1850,6 +1853,8 @@ return (
         setShowOnlineUsers={setShowOnlineUsers}
         showMembers={showMembers}
         setShowMembers={setShowMembers}
+        showAI={showAI}
+        onToggleAI={() => { setShowAI(v => !v); setShowHistory(false); setShowMembers(false); setShowOnlineUsers(false); }}
         role={role}
         handleLeave={handleLeave}
         handleDeleteWorkspace={handleDeleteWorkspace}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield, History, Users, LogOut, Trash2, Search, Lock, Menu, X, Volume2, VolumeX } from "lucide-react";
+import { Sun, Moon, Plus, ChevronRight, AlertTriangle, Eye, Info, Shield, History, Users, LogOut, Trash2, Search, Lock, Menu, X, Volume2, VolumeX, Sparkles } from "lucide-react";
 import OnlineAvatars from "./OnlineAvatars";
 
 const Navbar = ({
@@ -18,6 +18,8 @@ const Navbar = ({
   setShowOnlineUsers,
   showMembers,
   setShowMembers,
+  showAI,
+  onToggleAI,
   role,
   handleLeave,
   handleDeleteWorkspace,
@@ -76,6 +78,13 @@ const Navbar = ({
                   <Lock size={7} />
                 </span>
               )}
+            </button>
+
+            <button onClick={onToggleAI}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-[12px] ${showAI ? (theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-600/20 text-blue-400") : (theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800/80")}`}
+              title="AI Assistant">
+              <Sparkles size={14} />
+              <span>AI</span>
             </button>
 
             <div className={`w-px h-5 mx-1 ${theme === "light" ? "bg-gray-200" : "bg-slate-800"}`} />
@@ -142,7 +151,11 @@ const Navbar = ({
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-1">
+            <button onClick={onToggleAI} aria-label="AI Assistant" title="AI Assistant"
+              className={`p-2 rounded-lg transition ${showAI ? (theme === "light" ? "bg-blue-100 text-blue-600" : "bg-blue-600/20 text-blue-400") : T.text}`}>
+              <Sparkles size={20} />
+            </button>
             <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`p-2 rounded-lg ${T.text}`}>
               {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
