@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, X, Send, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { X, Send, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
 
 const MAX_CHARS = 1000;          // must match the server cap
@@ -195,7 +195,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
       role="dialog"
-      aria-label="AI assistant"
+      aria-label="Ghostfreak AI"
       style={heightStyle}
       className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] flex flex-col w-[min(24rem,calc(100vw-1rem))] h-[calc(100dvh-1rem)] sm:h-[min(36rem,calc(100dvh-5rem))] ${T.panelBg} rounded-2xl border shadow-2xl overflow-hidden`}
     >
@@ -203,15 +203,19 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       <div className={`flex items-center justify-between gap-2 px-3.5 py-3 border-b ${T.divider}`}>
         <div className="flex items-center gap-2 min-w-0">
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: light ? "#DBEAFE" : "rgba(110,155,244,0.15)" }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: "#14171F" }}
           >
-            <Sparkles size={14} style={{ color: "#6E9BF4" }} />
+            <img
+              src="/ghostfreak.png"
+              alt=""
+              width={24}
+              height={24}
+              draggable={false}
+              style={{ imageRendering: "pixelated" }}
+            />
           </div>
-          <div className="min-w-0">
-            <p className={`text-[12.5px] font-semibold ${T.text} leading-none`}>AI Assistant</p>
-            <p className={`text-[9.5px] ${T.label} mt-1 leading-none`}>Read-only · answers from this board</p>
-          </div>
+          <p className={`text-[13px] font-semibold ${T.text} leading-none truncate`}>Ghostfreak AI</p>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -234,10 +238,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         </div>
       </div>
 
-      {/* Privacy notice */}
-      <p className={`px-3.5 py-1.5 text-[9px] leading-snug ${T.label} border-b ${T.divider}`}>
-        Your questions and this board's task text are sent to Google's Gemini API (free tier), which may use them to improve Google products. Don't put secrets in tasks.
-      </p>
+
 
       {/* Messages */}
       <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-2.5">
