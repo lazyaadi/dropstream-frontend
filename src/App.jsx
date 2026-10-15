@@ -291,6 +291,47 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+function GoogleSlot({ theme, containerRef }) {
+  const [state, setState] = useState("loading"); // "loading" | "ready" | "failed"
+
+  useEffect(() => {
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      const el = containerRef.current;
+      const elapsed = Date.now() - startedAt;
+      if (el && el.childElementCount > 0 && el.offsetHeight > 0) {
+        setState("ready");
+        clearInterval(timer);
+      } else if (elapsed > 60000) {
+        clearInterval(timer);
+      } else if (elapsed > 10000) {
+        setState((s) => (s === "ready" ? s : "failed"));
+      }
+    }, 300);
+    return () => clearInterval(timer);
+  }, [containerRef]);
+
+  return (
+    <div className="relative w-full min-h-[44px]">
+      {state === "loading" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`absolute inset-0 z-10 flex items-center justify-center gap-2.5 rounded border text-[11px] animate-pulse ${theme === "light" ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-slate-800/60 border-slate-700 text-slate-400"}`}
+          style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" aria-hidden="true" />
+          Loading Google sign-in…
+        </div>
+      )}
+      {state === "failed" && (
+        <p className={`text-center text-[11px] leading-relaxed py-3 ${theme === "light" ? "text-gray-500" : "text-slate-400"}`}>
+          Google sign-in isn't available right now. Use your email and password above.
+        </p>
+      )}
+      <div ref={containerRef} className="w-full overflow-hidden flex justify-center" />
+    </div>
+  );
+}
 
 function AppInner() {
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
@@ -472,7 +513,7 @@ function AppInner() {
   const [wsErrorName, setWsErrorName]       = useState("");
   const [wsUnlockAt, setWsUnlockAt]         = useState(null);
   const [wsAttemptsRemaining, setWsAttemptsRemaining] = useState(null);
-  const [googleState, setGoogleState] = useState("loading");
+  
   const isProRef    = useRef(isPro);
   const effectiveIsProRef = useRef(isPro);
   const userNameRef = useRef(userName);
@@ -1061,24 +1102,7 @@ function AppInner() {
     };
   }, [authReady, authStep]);
 
-  useEffect(() => {
-    if (authReady || authStep !== "email") return undefined;
-    setGoogleState("loading");
-    const startedAt = Date.now();
-    const timer = setInterval(() => {
-      const el = googleButtonRef.current;
-      const elapsed = Date.now() - startedAt;
-      if (el && el.childElementCount > 0 && el.offsetHeight > 0) {
-        setGoogleState("ready");
-        clearInterval(timer);
-      } else if (elapsed > 60000) {
-        clearInterval(timer);
-      } else if (elapsed > 10000) {
-        setGoogleState((s) => (s === "ready" ? s : "failed"));
-      }
-    }, 300);
-    return () => clearInterval(timer);
-  }, [authReady, authStep]);
+  
 
   const handleNameNext = useCallback(() => {
     if (!userName.trim()) return setAuthError("Your name is required.");
@@ -1569,29 +1593,12 @@ const handleDragEnd = ({ active, over }) => {
                   className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white p-3.5 rounded-xl font-bold text-[13px] uppercase tracking-wide transition-all active:scale-95 cursor-pointer">
                   {authLoading ? "Loading…" : "Login"}
                 </button>
-                <div className={`flex items-center gap-3 py-1 ${theme === "light" ? "text-gray-300" : "text-slate-700"}`}>
+                             <div className={`flex items-center gap-3 py-1 ${theme === "light" ? "text-gray-300" : "text-slate-700"}`}>
                   <div className="flex-1 h-px bg-current opacity-50" />
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-70" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>or</span>
                   <div className="flex-1 h-px bg-current opacity-50" />
                 </div>
-                <div className="relative w-full min-h-[44px]">
-                  {googleState === "loading" && (
-                    <div
-                      role="status"
-                      aria-live="polite"
-                      className={`absolute inset-0 z-10 flex items-center justify-center gap-2.5 rounded border text-[11px] animate-pulse ${theme === "light" ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-slate-800/60 border-slate-700 text-slate-400"}`}
-                      style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                      <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" aria-hidden="true" />
-                      Loading Google sign-in…
-                    </div>
-                  )}
-                  {googleState === "failed" && (
-                    <p className={`text-center text-[11px] leading-relaxed py-3 ${theme === "light" ? "text-gray-500" : "text-slate-400"}`}>
-                      Google sign-in isn't available right now. Use your email and password above.
-                    </p>
-                  )}
-                  <div ref={googleButtonRef} className="w-full overflow-hidden flex justify-center" />
-                </div>
+                <GoogleSlot theme={theme} containerRef={googleButtonRef} />
                 <button onClick={() => { setAuthStep("name"); setAuthError(""); }}
                   className={`w-full text-[11px] font-medium p-2 rounded-lg transition cursor-pointer ${theme === "light" ? "text-gray-600 hover:bg-gray-100" : "text-slate-400 hover:bg-slate-800"}`}
                   style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -1599,6 +1606,8 @@ const handleDragEnd = ({ active, over }) => {
                 </button>
               </div>
             )}
+
+            
 
             {authReady && (
               <div className="space-y-3">
