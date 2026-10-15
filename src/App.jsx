@@ -1061,6 +1061,25 @@ function AppInner() {
     };
   }, [authReady, authStep]);
 
+  useEffect(() => {
+    if (authReady || authStep !== "email") return undefined;
+    setGoogleState("loading");
+    const startedAt = Date.now();
+    const timer = setInterval(() => {
+      const el = googleButtonRef.current;
+      const elapsed = Date.now() - startedAt;
+      if (el && el.childElementCount > 0 && el.offsetHeight > 0) {
+        setGoogleState("ready");
+        clearInterval(timer);
+      } else if (elapsed > 60000) {
+        clearInterval(timer);
+      } else if (elapsed > 10000) {
+        setGoogleState((s) => (s === "ready" ? s : "failed"));
+      }
+    }, 300);
+    return () => clearInterval(timer);
+  }, [authReady, authStep]);
+
   const handleNameNext = useCallback(() => {
     if (!userName.trim()) return setAuthError("Your name is required.");
     localStorage.setItem("sb_pending_name", userName.trim());
@@ -1411,25 +1430,8 @@ const handleDragEnd = ({ active, over }) => {
     </motion.div>
   );
 
-  useEffect(() => {
-    if (authReady || authStep !== "email") return undefined;
-    setGoogleState("loading");
-    const startedAt = Date.now();
-    const timer = setInterval(() => {
-      const el = googleButtonRef.current;
-      const elapsed = Date.now() - startedAt;
-      if (el && el.childElementCount > 0 && el.offsetHeight > 0) {
-        setGoogleState("ready");
-        clearInterval(timer);
-      } else if (elapsed > 60000) {
-        clearInterval(timer);
-      } else if (elapsed > 10000) {
-        setGoogleState((s) => (s === "ready" ? s : "failed"));
-      }
-    }, 300);
-    return () => clearInterval(timer);
-  }, [authReady, authStep]);
-  
+
+
   if (!isJoined) {
     return (
       <div className={`relative min-h-screen ${T.bg} font-sans ${T.text} flex items-center justify-center overflow-x-hidden p-4`}>
