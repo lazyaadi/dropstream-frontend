@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { X, Send, Trash2, Loader2, AlertTriangle } from "lucide-react";
-import { TD, TL } from "../../lib/constants";
+import { sbVars } from "../../lib/sbTheme";
 
 const MAX_CHARS = 1000;          // must match the server cap
 const MAX_HISTORY_SENT = 10;     // must match the server cap
@@ -13,6 +13,12 @@ const SUGGESTIONS = [
   "What should I work on next?",
   "How many tasks are in each column?",
 ];
+
+const mono = { fontFamily: "var(--sb-mono)" };
+const display = { fontFamily: "var(--sb-display)" };
+
+const ICON_BTN =
+  "w-[30px] h-[30px] rounded-lg flex items-center justify-center transition cursor-pointer text-[color:var(--sb-text-3)] hover:bg-[color:var(--sb-surface-2)] hover:text-[color:var(--sb-text-2)] disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent";
 
 const localDateISO = () => {
   const d = new Date();
@@ -43,17 +49,31 @@ function saveStored(key, msgs) {
   }
 }
 
-// Safe renderer: only React text nodes, **bold** and bullets. Never uses innerHTML.
+// Safe renderer: only React text nodes, **bold**, bullets and date/time chips. Never uses innerHTML.
+const TOKEN_SPLIT = /(\*\*[^*]+\*\*|\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?)/g;
+const BOLD_TEST = /^\*\*[^*]+\*\*$/;
+const DATE_TEST = /^\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?$/;
+
 function renderText(text) {
   return text.split("\n").map((line, i) => {
     if (line.trim() === "") return <div key={i} className="h-1.5" />;
     const bullet = /^\s*[*-]\s+/.test(line);
     const body = bullet ? line.replace(/^\s*[*-]\s+/, "") : line;
-    const parts = body.split(/(\*\*[^*]+\*\*)/g).map((p, j) =>
-      /^\*\*[^*]+\*\*$/.test(p)
-        ? <strong key={j}>{p.slice(2, -2)}</strong>
-        : <React.Fragment key={j}>{p}</React.Fragment>
-    );
+    const parts = body.split(TOKEN_SPLIT).map((p, j) => {
+      if (BOLD_TEST.test(p)) return <strong key={j}>{p.slice(2, -2)}</strong>;
+      if (DATE_TEST.test(p)) {
+        return (
+          <span
+            key={j}
+            className="text-[11.5px] px-1.5 py-px rounded-[5px] bg-[color:var(--sb-blue-soft)] text-[color:var(--sb-blue)]"
+            style={mono}
+          >
+            {p}
+          </span>
+        );
+      }
+      return <React.Fragment key={j}>{p}</React.Fragment>;
+    });
     return bullet
       ? <div key={i} className="flex gap-1.5"><span>•</span><span className="min-w-0">{parts}</span></div>
       : <div key={i}>{parts}</div>;
@@ -61,8 +81,6 @@ function renderText(text) {
 }
 
 export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, userEmail }) {
-  const T = theme === "light" ? TL : TD;
-  const light = theme === "light";
   const key = storageKey(userEmail, workspaceName);
 
   const [messages, setMessages] = useState(() => loadStored(key));
@@ -149,7 +167,13 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workspaceName, message: text, history, today: localDateISO() }),
+        body: JSON.stringify({
+          workspaceName,
+          message: text,
+          history,
+          today: localDateISO(),
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
         signal: controller.signal,
       });
       const data = await res.json().catch(() => null);
@@ -196,56 +220,60 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       exit={{ opacity: 0, y: 12 }}
       role="dialog"
       aria-label="Ghostfreak AI"
-      style={heightStyle}
-      className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] flex flex-col w-[min(24rem,calc(100vw-1rem))] h-[calc(100dvh-1rem)] sm:h-[min(36rem,calc(100dvh-5rem))] ${T.panelBg} rounded-2xl border shadow-2xl overflow-hidden`}
+      style={{ ...sbVars(theme), ...heightStyle, fontFamily: "var(--sb-body)", boxShadow: "var(--sb-shadow)" }}
+      className="fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] flex flex-col w-[min(25rem,calc(100vw-1rem))] h-[calc(100dvh-1rem)] sm:h-[min(40rem,calc(100dvh-5rem))] rounded-[20px] border overflow-hidden bg-[color:var(--sb-surface)] border-[color:var(--sb-border)] text-[color:var(--sb-text)]"
     >
       {/* Header */}
-      <div className={`flex items-center justify-between gap-2 px-3.5 py-3 border-b ${T.divider}`}>
-        <div className="flex items-center gap-2 min-w-0">
+      <header className="flex items-center justify-between gap-2 px-4 py-3.5 shrink-0 border-b border-[color:var(--sb-border-soft)]">
+        <div className="flex items-center gap-[11px] min-w-0">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            className="relative w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0 border border-[color:var(--sb-blue-line)]"
             style={{ background: "#14171F" }}
           >
             <img
               src="/ghostfreak.png"
               alt=""
-              width={24}
-              height={24}
+              width={26}
+              height={26}
               draggable={false}
               style={{ imageRendering: "pixelated" }}
             />
+            <span className="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] rounded-full border-2 border-[color:var(--sb-surface)] bg-[color:var(--sb-green)]" />
           </div>
-          <p className={`text-[13px] font-semibold ${T.text} leading-none truncate`}>Ghostfreak AI</p>
+          <div className="min-w-0">
+            <p className="text-[14.5px] font-semibold tracking-[-0.005em] leading-tight truncate" style={display}>
+              Ghostfreak AI
+            </p>
+            <p className="text-[10px] tracking-[0.04em] mt-0.5 leading-none text-[color:var(--sb-text-3)]" style={mono}>
+              BOARD ASSISTANT
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => { setMessages([]); setErrorMsg(""); }}
             disabled={loading || messages.length === 0}
-            className={`p-1.5 rounded-lg ${T.label} hover:text-red-500 disabled:opacity-30 disabled:hover:text-inherit transition cursor-pointer`}
+            className={ICON_BTN}
             title="Clear chat"
             aria-label="Clear chat"
           >
-            <Trash2 size={14} />
+            <Trash2 size={15} />
           </button>
-          <button
-            onClick={onClose}
-            className={`p-1.5 rounded-lg ${T.label} hover:text-blue-500 transition cursor-pointer`}
-            title="Close"
-            aria-label="Close"
-          >
+          <button onClick={onClose} className={ICON_BTN} title="Close" aria-label="Close">
             <X size={15} />
           </button>
         </div>
-      </div>
-
-
+      </header>
 
       {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-2.5">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-4 py-[18px] flex flex-col gap-3 [scrollbar-width:thin] [scrollbar-color:var(--sb-border)_transparent]"
+      >
         {messages.length === 0 && (
           <div className="pt-1">
-            <p className={`text-[12px] font-medium ${T.text} mb-1`}>Ask about your board</p>
-            <p className={`text-[10.5px] ${T.label} mb-3`}>
+            <p className="text-[13px] font-medium mb-1" style={display}>Ask about your board</p>
+            <p className="text-[11.5px] leading-relaxed mb-3.5 text-[color:var(--sb-text-2)]">
               I can summarize, count tasks, spot overdue work and suggest what to do next. I can't change tasks.
             </p>
             <div className="flex flex-col gap-1.5">
@@ -254,7 +282,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
                   key={s}
                   onClick={() => send(s)}
                   disabled={loading}
-                  className={`text-left text-[11px] px-3 py-2 rounded-xl border ${T.historyBg} ${T.text} hover:border-blue-500/50 transition cursor-pointer disabled:opacity-50`}
+                  className="text-left text-[12px] px-3.5 py-2.5 rounded-xl border transition cursor-pointer disabled:opacity-50 bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)] text-[color:var(--sb-text)] hover:border-[color:var(--sb-blue)]"
                 >
                   {s}
                 </button>
@@ -265,25 +293,24 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
 
         {messages.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <div
-                className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-md text-[12px] leading-relaxed text-white whitespace-pre-wrap break-words"
-                style={{ background: "linear-gradient(135deg,#6E9BF4,#4F7BE0)" }}
-              >
-                {m.text}
-              </div>
+            <div
+              key={i}
+              className="self-end max-w-[82%] px-3.5 py-2.5 text-[13px] leading-[1.5] font-medium whitespace-pre-wrap break-words rounded-[16px_16px_4px_16px] bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+            >
+              {m.text}
             </div>
           ) : (
-            <div key={i} className="flex justify-start">
-              <div className={`max-w-[92%] px-3 py-2 rounded-2xl rounded-bl-md border text-[12px] leading-relaxed break-words ${T.historyBg} ${T.text}`}>
-                {renderText(m.text)}
-              </div>
+            <div
+              key={i}
+              className="self-start max-w-[88%] px-3.5 py-2.5 text-[13px] leading-[1.5] break-words rounded-[16px_16px_16px_4px] border bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)] text-[color:var(--sb-text)]"
+            >
+              {renderText(m.text)}
             </div>
           )
         )}
 
         {loading && (
-          <div className={`flex items-center gap-2 text-[11px] ${T.label}`}>
+          <div className="flex items-center gap-2 text-[11.5px] text-[color:var(--sb-text-2)]">
             <Loader2 size={13} className="animate-spin" />
             <span>{slow ? "Still working… the server may be slow right now" : "Thinking…"}</span>
           </div>
@@ -292,12 +319,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         {errorMsg && (
           <div
             role="alert"
-            className="flex gap-2 items-start rounded-xl border px-3 py-2 text-[11px]"
-            style={{
-              background: "rgba(240,87,107,0.10)",
-              borderColor: "rgba(240,87,107,0.35)",
-              color: light ? "#B91C1C" : "#F0576B",
-            }}
+            className="flex gap-2 items-start rounded-xl border px-3 py-2 text-[11.5px] bg-[color:var(--sb-red-soft)] border-[color:var(--sb-red-line)] text-[color:var(--sb-red)]"
           >
             <AlertTriangle size={13} className="shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
@@ -305,9 +327,12 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         )}
       </div>
 
-      {/* Input */}
-      <div className={`border-t ${T.divider} p-2.5`} style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}>
-        <div className="flex items-end gap-2">
+      {/* Composer */}
+      <div
+        className="shrink-0 px-3.5 pt-3 border-t border-[color:var(--sb-border-soft)]"
+        style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
+      >
+        <div className="flex items-end gap-[9px]">
           <textarea
             ref={inputRef}
             rows={1}
@@ -317,20 +342,22 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
             onKeyDown={onKeyDown}
             placeholder="Ask about your board…"
             aria-label="Message"
-            className={`flex-1 resize-none rounded-xl border px-3 py-2 text-base sm:text-[12.5px] outline-none ${T.input}`}
+            className="flex-1 resize-none rounded-xl border px-3.5 py-[11px] text-base sm:text-[13px] outline-none transition bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border)] text-[color:var(--sb-text)] placeholder:text-[color:var(--sb-text-3)] focus:border-[color:var(--sb-blue)] focus:shadow-[0_0_0_3px_var(--sb-blue-soft)]"
           />
           <button
             onClick={() => send(input)}
             disabled={loading || !input.trim()}
             aria-label="Send"
-            className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-white disabled:opacity-40 transition cursor-pointer"
-            style={{ background: "linear-gradient(135deg,#6E9BF4,#4F7BE0)" }}
+            className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-default bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
           >
-            <Send size={15} />
+            <Send size={16} />
           </button>
         </div>
         {input.length >= 800 && (
-          <p className={`text-[9px] mt-1 text-right ${input.length >= MAX_CHARS ? "text-red-500" : T.label}`}>
+          <p
+            className={`text-[9px] mt-1 text-right ${input.length >= MAX_CHARS ? "text-[color:var(--sb-red)]" : "text-[color:var(--sb-text-3)]"}`}
+            style={mono}
+          >
             {input.length}/{MAX_CHARS}
           </p>
         )}
