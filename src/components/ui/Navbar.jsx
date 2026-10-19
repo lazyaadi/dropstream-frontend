@@ -21,22 +21,8 @@ const LockBadge = () => (
   </span>
 );
 
-// Pixel ghost on a dark tile so it stays visible in both themes.
-const GhostTile = ({ size = 22 }) => (
-  <span
-    className="inline-flex items-center justify-center rounded-md shrink-0"
-    style={{ width: size, height: size, background: "#14171F" }}
-  >
-    <img
-      src="/ghostfreak.png"
-      alt=""
-      width={size - 6}
-      height={size - 6}
-      draggable={false}
-      style={{ imageRendering: "pixelated" }}
-    />
-  </span>
-);
+
+
 
 const Navbar = ({
   theme,
@@ -53,8 +39,7 @@ const Navbar = ({
   setShowOnlineUsers,
   showMembers,
   setShowMembers,
-  showAI,
-  onToggleAI,
+
   role,
   handleLeave,
   handleDeleteWorkspace,
@@ -126,15 +111,7 @@ const Navbar = ({
               <span className="hidden lg:inline">Team</span>
               {!isPro && <LockBadge />}
             </button>
-            <button
-              onClick={onToggleAI}
-              className={`${LINK_BASE} ${showAI ? LINK_BLUE : LINK_IDLE}`}
-              title="Ghostfreak AI"
-              aria-label="Ghostfreak AI"
-            >
-              <GhostTile size={22} />
-              <span className="hidden lg:inline">AI</span>
-            </button>
+
 
             <div className={`${DIVIDER} mx-2`} />
 
@@ -229,14 +206,7 @@ const Navbar = ({
 
           {/* Mobile buttons */}
           <div className="md:hidden flex items-center gap-1">
-            <button
-              onClick={onToggleAI}
-              aria-label="Ghostfreak AI"
-              title="Ghostfreak AI"
-              className={`p-1.5 rounded-lg transition ${showAI ? LINK_BLUE : ""}`}
-            >
-              <GhostTile size={26} />
-            </button>
+
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               aria-label="Menu"

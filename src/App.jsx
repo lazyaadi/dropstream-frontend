@@ -263,8 +263,10 @@ import PinInput from "./components/ui/PinInput.jsx";
 import QuotaBanner from "./components/ui/QuotaBanner.jsx";
 import SearchBar from "./components/ui/SearchBar.jsx";
 import Navbar from "./components/ui/Navbar.jsx";
+import AIFab from "./components/ui/AiaFab.jsx";
 import MobileMenu from "./components/ui/MobileMenu.jsx";
 import TypingIndicator from "./components/ui/TypingIndicator.jsx";
+
 
 const ErrorBoundary = ({ children }) => {
   return <ErrorModal>{children}</ErrorModal>;
@@ -1816,6 +1818,11 @@ return (
           Reconnecting to the server… changes won't save until this reconnects.
         </div>
       )}
+        <AIFab
+        open={showAI}
+        theme={theme}
+        onToggle={() => { setShowAI(v => !v); setShowHistory(false); setShowMembers(false); setShowOnlineUsers(false); }}
+      />
       <AnimatePresence>
         {actionBanner && <ActionBanner key="action-banner" entry={actionBanner} onDismiss={() => setActionBanner(null)} theme={theme} />}
         {liveAction && <LiveActionCard key={liveAction.__uid || liveAction.id || liveAction.timestamp || liveAction.taskTitle} entry={liveAction} onDismiss={() => setLiveAction(null)} theme={theme} />}

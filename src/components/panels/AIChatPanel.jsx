@@ -221,7 +221,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       role="dialog"
       aria-label="Ghostfreak AI"
       style={{ ...sbVars(theme), ...heightStyle, fontFamily: "var(--sb-body)", boxShadow: "var(--sb-shadow)" }}
-      className="fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] flex flex-col w-[min(25rem,calc(100vw-1rem))] h-[calc(100dvh-1rem)] sm:h-[min(40rem,calc(100dvh-5rem))] rounded-[20px] border overflow-hidden bg-[color:var(--sb-surface)] border-[color:var(--sb-border)] text-[color:var(--sb-text)]"
+      className="fixed right-2 top-2 sm:right-6 sm:top-auto sm:bottom-24 z-[120] flex flex-col w-[min(25rem,calc(100vw-1rem))] h-[calc(100dvh-1rem)] sm:h-[min(40rem,calc(100dvh-8rem))] rounded-[20px] border overflow-hidden bg-[color:var(--sb-surface)] border-[color:var(--sb-border)] text-[color:var(--sb-text)]"
     >
       {/* Header */}
       <header className="flex items-center justify-between gap-2 px-4 py-3.5 shrink-0 border-b border-[color:var(--sb-border-soft)]">
