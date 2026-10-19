@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { sbVars } from "../../lib/sbTheme";
 
 
-export default function AIFab({ open, onToggle, theme }) {
+export default function AIfab({ open, onToggle, theme }) {
   return (
     <button
       onClick={onToggle}

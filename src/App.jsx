@@ -263,7 +263,7 @@ import PinInput from "./components/ui/PinInput.jsx";
 import QuotaBanner from "./components/ui/QuotaBanner.jsx";
 import SearchBar from "./components/ui/SearchBar.jsx";
 import Navbar from "./components/ui/Navbar.jsx";
-import AIFab from "./components/ui/Aifab.jsx";
+import AIfab from "./components/ui/Aifab.jsx";
 import MobileMenu from "./components/ui/MobileMenu.jsx";
 import TypingIndicator from "./components/ui/TypingIndicator.jsx";
 
