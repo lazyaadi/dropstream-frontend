@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { X, Send, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { X, Send, Trash2, Loader2, AlertTriangle, Check } from "lucide-react";
 import { sbVars } from "../../lib/sbTheme";
 
 const MAX_CHARS = 1000;          // must match the server cap
 const MAX_HISTORY_SENT = 10;     // must match the server cap
 const MAX_STORED = 20;
 const REQUEST_TIMEOUT_MS = 45000;
+
+const ACTION_TIMEOUT_MS = 30000;
+const ACTION_GAP_MS = 400;       // pause between moves so Log + banner show them one by one
+const MAX_MOVES = 5;             // must match the server cap
+const LABELS = { todo: "To Do", "in-progress": "In Progress", done: "Done" };
+
 const SUGGESTIONS = [
   "Summarize the board",
   "What's overdue?",
@@ -27,6 +33,74 @@ const localDateISO = () => {
 
 const storageKey = (email, ws) => `sb_ai_chat:${String(email || "").toLowerCase()}|${ws}`;
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const makeCid = () => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+const ROW_STATES = ["wait", "moving", "moved", "failed", "skipped"];
+
+// Only accepts the exact shape the server sends. Anything else is dropped.
+function sanitizeProposals(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const p of raw) {
+    if (out.length >= MAX_MOVES) break;
+    if (!p || typeof p !== "object") continue;
+    if (typeof p.taskId !== "string" || !p.taskId || p.taskId.length > 100) continue;
+    if (typeof p.title !== "string") continue;
+    if (!LABELS[p.from] || !LABELS[p.to] || p.from === p.to) continue;
+    if (seen.has(p.taskId)) continue;
+    seen.add(p.taskId);
+    out.push({ taskId: p.taskId, title: p.title.slice(0, 200), from: p.from, to: p.to });
+  }
+  return out;
+}
+
+// Cards that were pending or running when stored come back as expired.
+function restoreMsg(m) {
+  if (m.role !== "assistant" || !Array.isArray(m.proposals)) return { role: m.role, text: m.text };
+  const proposals = sanitizeProposals(m.proposals);
+  if (proposals.length === 0) return { role: m.role, text: m.text };
+  const cardStatus = m.cardStatus === "done" || m.cardStatus === "cancelled" ? m.cardStatus : "expired";
+  const results =
+    Array.isArray(m.results) && m.results.length === proposals.length
+      ? m.results.map((r) => ({
+          state: ROW_STATES.includes(r?.state) ? r.state : "wait",
+          ...(typeof r?.msg === "string" ? { msg: r.msg.slice(0, 120) } : {}),
+        }))
+      : undefined;
+  return {
+    role: "assistant",
+    text: m.text,
+    proposals,
+    cardStatus,
+    cid: typeof m.cid === "string" ? m.cid : makeCid(),
+    ...(results ? { results } : {}),
+  };
+}
+
+const expirePending = (m) => (m.cardStatus === "pending" ? { ...m, cardStatus: "expired" } : m);
+
+function describeActionError(res, data, p) {
+  const serverMsg = typeof data?.error === "string" ? data.error.slice(0, 120) : "";
+  switch (res.status) {
+    case 401: return { stop: true, msg: "Your session expired. Please log in again." };
+    case 403: return { stop: true, msg: serverMsg || "You can't do this action." };
+    case 409:
+      return {
+        stop: false,
+        msg: data?.code === "already" ? `Already in ${LABELS[p.to]}.` : "This task changed since I proposed it. Ask again.",
+      };
+    case 404: return { stop: false, msg: "This task no longer exists." };
+    case 400: return { stop: false, msg: "The request was rejected." };
+    case 429: {
+      const s = parseInt(res.headers.get("Retry-After"), 10);
+      return { stop: true, msg: Number.isFinite(s) && s > 0 ? `Too many actions. Try again in ${s}s.` : "Too many actions. Try again in a moment." };
+    }
+    case 503: return { stop: true, msg: "Can't verify your plan right now. Try again later." };
+    default: return { stop: true, msg: serverMsg || "Something went wrong." };
+  }
+}
+
 function loadStored(key) {
   try {
     const raw = sessionStorage.getItem(key);
@@ -35,6 +109,7 @@ function loadStored(key) {
     if (!Array.isArray(arr)) return [];
     return arr
       .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.text === "string")
+      .map(restoreMsg)
       .slice(-MAX_STORED);
   } catch {
     return [];
@@ -80,6 +155,90 @@ function renderText(text) {
   });
 }
 
+function MoveCard({ m, busy, onConfirm, onCancel }) {
+  const list = m.proposals;
+  const results = m.results || [];
+  const status = m.cardStatus;
+  const many = list.length > 1;
+  const movedCount = results.filter((r) => r?.state === "moved").length;
+  return (
+    <div
+      className="self-start w-[88%] rounded-[14px] border p-3 flex flex-col gap-2.5 bg-[color:var(--sb-surface)] border-[color:var(--sb-border)]"
+      style={{ opacity: status === "expired" || status === "cancelled" ? 0.6 : 1 }}
+    >
+      <p className="text-[10px] tracking-[0.04em] text-[color:var(--sb-text-3)]" style={mono}>
+        {many ? `MOVE ${list.length} TASKS` : "MOVE TASK"}
+      </p>
+      <ul className="flex flex-col gap-2 m-0 p-0 list-none">
+        {list.map((p, k) => {
+          const r = results[k];
+          const st = r?.state;
+          return (
+            <li key={p.taskId} className="flex items-start gap-2 min-w-0">
+              {many && (
+                <span className="text-[10.5px] mt-[3px] w-3 shrink-0 text-[color:var(--sb-text-3)]" style={mono}>
+                  {k + 1}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-[12.5px] font-medium leading-snug break-words">{p.title}</p>
+                <p className="text-[10.5px] mt-0.5 text-[color:var(--sb-text-2)]" style={mono}>
+                  {LABELS[p.from]} → {LABELS[p.to]}
+                </p>
+                {st === "failed" && r.msg && (
+                  <p className="text-[11px] mt-0.5 text-[color:var(--sb-red)]">{r.msg}</p>
+                )}
+                {st === "skipped" && (
+                  <p className="text-[11px] mt-0.5 text-[color:var(--sb-text-3)]">Not moved</p>
+                )}
+              </div>
+              <span className="shrink-0 mt-0.5 w-4 flex justify-center">
+                {st === "moving" && status === "running" && (
+                  <Loader2 size={13} className="animate-spin text-[color:var(--sb-text-2)]" />
+                )}
+                {st === "moved" && <Check size={14} className="text-[color:var(--sb-green)]" />}
+                {st === "failed" && <AlertTriangle size={13} className="text-[color:var(--sb-red)]" />}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {status === "pending" && (
+        <div className="flex gap-2">
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="h-9 px-4 rounded-[10px] text-[12.5px] font-semibold transition cursor-pointer disabled:opacity-40 disabled:cursor-default bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+          >
+            {many ? "Confirm all" : "Confirm"}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="h-9 px-4 rounded-[10px] border text-[12.5px] font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-default border-[color:var(--sb-border)] text-[color:var(--sb-text-2)] hover:bg-[color:var(--sb-surface-2)]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {status === "running" && <p className="text-[11px] text-[color:var(--sb-text-2)]">Moving tasks…</p>}
+      {status === "done" && many && (
+        <p className="text-[11px] text-[color:var(--sb-text-2)]" style={mono}>
+          {movedCount} of {list.length} moved
+        </p>
+      )}
+      {status === "done" && !many && movedCount === 1 && (
+        <p className="text-[11px] text-[color:var(--sb-green)]">Moved to {LABELS[list[0].to]}</p>
+      )}
+      {status === "cancelled" && <p className="text-[11px] text-[color:var(--sb-text-3)]">Cancelled</p>}
+      {status === "expired" && (
+        <p className="text-[11px] text-[color:var(--sb-text-3)]">Expired. Ask again if you still want this.</p>
+      )}
+    </div>
+  );
+}
+
 export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, userEmail }) {
   const key = storageKey(userEmail, workspaceName);
 
@@ -89,12 +248,13 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
   const [slow, setSlow] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [vvh, setVvh] = useState(null);
-
+ const [actionRunning, setActionRunning] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const sendingRef = useRef(false);
   const abortRef = useRef(null);
   const mountedRef = useRef(true);
+    const actionRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -140,14 +300,14 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
 
   const send = useCallback(async (raw) => {
     const text = String(raw ?? "").trim();
-    if (!text || text.length > MAX_CHARS || sendingRef.current) return;
+    if (!text || text.length > MAX_CHARS || sendingRef.current || actionRef.current) return;
     sendingRef.current = true;
     setErrorMsg("");
     setSlow(false);
     setLoading(true);
 
     const history = messages.slice(-MAX_HISTORY_SENT).map((m) => ({ role: m.role, text: m.text }));
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [...prev.map(expirePending), { role: "user", text }]);
     setInput("");
 
     const controller = new AbortController();
@@ -180,7 +340,13 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       if (!mountedRef.current) return;
 
       if (res.ok && typeof data?.reply === "string") {
-        setMessages((prev) => [...prev, { role: "assistant", text: data.reply }]);
+        const proposals = sanitizeProposals(data.proposals);
+        setMessages((prev) => [
+          ...prev,
+          proposals.length
+            ? { role: "assistant", text: data.reply, proposals, cardStatus: "pending", cid: makeCid() }
+            : { role: "assistant", text: data.reply },
+        ]);
       } else if (res.status === 401) {
         fail("Your session expired. Please log in again.");
       } else if (res.status === 403) {
@@ -199,6 +365,73 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
       if (mountedRef.current) { setLoading(false); setSlow(false); }
     }
   }, [messages, serverUrl, workspaceName]);
+
+    const confirmCard = useCallback(async (cid) => {
+    if (actionRef.current || sendingRef.current) return;
+    const card = messages.find((m) => m.cid === cid);
+    if (!card || card.cardStatus !== "pending" || !card.proposals?.length) return;
+    actionRef.current = true; // set before any await: a double click can't start twice
+    setActionRunning(true);
+    setErrorMsg("");
+    const props = card.proposals;
+    const patchCard = (fn) => setMessages((prev) => prev.map((m) => (m.cid === cid ? fn(m) : m)));
+    const setRow = (idx, row) =>
+      patchCard((m) => ({ ...m, results: (m.results || []).map((r, k) => (k === idx ? row : r)) }));
+    patchCard((m) => ({ ...m, cardStatus: "running", results: props.map(() => ({ state: "wait" })) }));
+
+    let stop = false;
+    try {
+      for (let i = 0; i < props.length; i++) {
+        if (stop) { setRow(i, { state: "skipped" }); continue; }
+        if (i > 0) await sleep(ACTION_GAP_MS);
+        setRow(i, { state: "moving" });
+        const p = props[i];
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ACTION_TIMEOUT_MS);
+        try {
+          const res = await fetch(`${serverUrl}/api/ai/action`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              workspaceName,
+              action: "move_task",
+              taskId: p.taskId,
+              targetStatus: p.to,
+              expectedFrom: p.from,
+            }),
+            signal: controller.signal,
+          });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.ok) { setRow(i, { state: "moved" }); continue; }
+          const r = describeActionError(res, data, p);
+          setRow(i, { state: "failed", msg: r.msg });
+          if (r.stop) stop = true;
+        } catch (err) {
+          setRow(i, {
+            state: "failed",
+            msg: err?.name === "AbortError"
+              ? "No answer from the server. Check the board before trying again."
+              : "Can't reach the server.",
+          });
+          stop = true;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    } finally {
+      actionRef.current = false;
+      patchCard((m) => ({ ...m, cardStatus: "done" }));
+      if (mountedRef.current) setActionRunning(false);
+    }
+  }, [messages, serverUrl, workspaceName]);
+
+  const cancelCard = useCallback((cid) => {
+    if (actionRef.current) return;
+    setMessages((prev) =>
+      prev.map((m) => (m.cid === cid && m.cardStatus === "pending" ? { ...m, cardStatus: "cancelled" } : m))
+    );
+  }, []);
 
   const onKeyDown = (e) => {
     // Enter sends on desktop; on phones Enter is a newline and the button sends.
@@ -252,7 +485,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         <div className="flex items-center gap-1">
           <button
             onClick={() => { setMessages([]); setErrorMsg(""); }}
-            disabled={loading || messages.length === 0}
+            disabled={loading || actionRunning || !input.trim()}
             className={ICON_BTN}
             title="Clear chat"
             aria-label="Clear chat"
@@ -291,7 +524,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
           </div>
         )}
 
-        {messages.map((m, i) =>
+               {messages.map((m, i) =>
           m.role === "user" ? (
             <div
               key={i}
@@ -300,12 +533,19 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
               {m.text}
             </div>
           ) : (
-            <div
-              key={i}
-              className="self-start max-w-[88%] px-3.5 py-2.5 text-[13px] leading-[1.5] break-words rounded-[16px_16px_16px_4px] border bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)] text-[color:var(--sb-text)]"
-            >
-              {renderText(m.text)}
-            </div>
+            <React.Fragment key={i}>
+              <div className="self-start max-w-[88%] px-3.5 py-2.5 text-[13px] leading-[1.5] break-words rounded-[16px_16px_16px_4px] border bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)] text-[color:var(--sb-text)]">
+                {renderText(m.text)}
+              </div>
+              {m.proposals && m.cardStatus && (
+                <MoveCard
+                  m={m}
+                  busy={loading || actionRunning}
+                  onConfirm={() => confirmCard(m.cid)}
+                  onCancel={() => cancelCard(m.cid)}
+                />
+              )}
+            </React.Fragment>
           )
         )}
 
