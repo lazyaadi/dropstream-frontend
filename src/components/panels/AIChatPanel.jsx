@@ -35,7 +35,7 @@ const storageKey = (email, ws) => `sb_ai_chat:${String(email || "").toLowerCase(
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const makeCid = () => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-const ROW_STATES = ["wait", "moving", "moved", "failed", "skipped"];
+const ROW_STATES = ["wait", "moving", "moved", "failed", "skipped", "already"];
 
 // Only accepts the exact shape the server sends. Anything else is dropped.
 function sanitizeProposals(raw) {
@@ -86,10 +86,8 @@ function describeActionError(res, data, p) {
     case 401: return { stop: true, msg: "Your session expired. Please log in again." };
     case 403: return { stop: true, msg: serverMsg || "You can't do this action." };
     case 409:
-      return {
-        stop: false,
-        msg: data?.code === "already" ? `Already in ${LABELS[p.to]}.` : "This task changed since I proposed it. Ask again.",
-      };
+      if (data?.code === "already") return { stop: false, already: true, msg: `Already in ${LABELS[p.to]}.` };
+      return { stop: false, msg: "This task changed since I proposed it. Ask again." };
     case 404: return { stop: false, msg: "This task no longer exists." };
     case 400: return { stop: false, msg: "The request was rejected." };
     case 429: {
@@ -190,6 +188,9 @@ function MoveCard({ m, busy, onConfirm, onCancel }) {
                 )}
                 {st === "skipped" && (
                   <p className="text-[11px] mt-0.5 text-[color:var(--sb-text-3)]">Not moved</p>
+                )}
+                {st === "already" && (
+                  <p className="text-[11px] mt-0.5 text-[color:var(--sb-text-3)]">{r.msg || "Already there"}</p>
                 )}
               </div>
               <span className="shrink-0 mt-0.5 w-4 flex justify-center">
@@ -405,7 +406,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
           const data = await res.json().catch(() => null);
           if (res.ok && data?.ok) { setRow(i, { state: "moved" }); continue; }
           const r = describeActionError(res, data, p);
-          setRow(i, { state: "failed", msg: r.msg });
+          setRow(i, { state: r.already ? "already" : "failed", msg: r.msg });
           if (r.stop) stop = true;
         } catch (err) {
           setRow(i, {
@@ -471,7 +472,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
               draggable={false}
               style={{ imageRendering: "pixelated" }}
             />
-            <span className="absolute -bottom-0.5 -right-0.5 w-[9px] h-[9px] rounded-full border-2 border-[color:var(--sb-surface)] bg-[color:var(--sb-green)]" />
+
           </div>
           <div className="min-w-0">
             <p className="text-[14.5px] font-semibold tracking-[-0.005em] leading-tight truncate" style={display}>
@@ -485,7 +486,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         <div className="flex items-center gap-1">
           <button
             onClick={() => { setMessages([]); setErrorMsg(""); }}
-            disabled={loading || actionRunning || !input.trim()}
+            disabled={loading || actionRunning || messages.length === 0}
             className={ICON_BTN}
             title="Clear chat"
             aria-label="Clear chat"
@@ -507,7 +508,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
           <div className="pt-1">
             <p className="text-[13px] font-medium mb-1" style={display}>Ask about your board</p>
             <p className="text-[11.5px] leading-relaxed mb-3.5 text-[color:var(--sb-text-2)]">
-              I can summarize, count tasks, spot overdue work and suggest what to do next. I can't change tasks.
+              I can summarize, count tasks, spot overdue work and suggest what to do next. Pro users can also ask me to move tasks, and you confirm before anything changes.
             </p>
             <div className="flex flex-col gap-1.5">
               {SUGGESTIONS.map((s) => (
