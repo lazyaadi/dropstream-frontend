@@ -527,7 +527,8 @@ function AppInner() {
   
   const notificationQueueRef = useRef([]);
   const notificationProcessingRef = useRef(false);
-  const recentNotifSignaturesRef = useRef([]);
+   const recentNotifSignaturesRef = useRef([]);
+  const seenNotifKeysRef = useRef(new Set());
 
   const activateSubmittingRef = useRef(false);
   useEffect(() => { isProRef.current    = isPro;    }, [isPro]);
@@ -540,6 +541,14 @@ function AppInner() {
   const enqueueNotification = (entry, isSelf = false) => {
     if (isSelf) return;
     try {
+      // Each history entry has its own timestamp. Both socket events carry the same entry, so show it once.
+      if (entry.timestamp) {
+        const uniq = `${entry.timestamp}|${(entry.action||"").toString().trim().toLowerCase()}|${(entry.taskTitle||"").toString().trim()}|${(entry.userName||"").toString().trim()}`;
+        const seen = seenNotifKeysRef.current;
+        if (seen.has(uniq)) return;
+        seen.add(uniq);
+        if (seen.size > 100) seen.delete(seen.values().next().value);
+      }
       const sig = `${(entry.action||"").toString().trim().toLowerCase()}|${(entry.taskTitle||"").toString().trim()}|${(entry.userName||"").toString().trim()}`;
       const now = Date.now();
       recentNotifSignaturesRef.current = recentNotifSignaturesRef.current.filter(x => now - x.ts < 1000);
