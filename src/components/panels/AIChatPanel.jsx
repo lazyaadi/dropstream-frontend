@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { X, Send, Trash2, Loader2, AlertTriangle, Check } from "lucide-react";
+import { motion, useIsPresent } from "framer-motion";
+import { X, Send, Trash2, Loader2, AlertTriangle, Check, Mic, Square } from "lucide-react";
 import { sbVars } from "../../lib/sbTheme";
 
 const MAX_CHARS = 1000;          // must match the server cap
@@ -12,6 +12,42 @@ const ACTION_TIMEOUT_MS = 30000;
 const ACTION_GAP_MS = 400;       // pause between moves so Log + banner show them one by one
 const MAX_MOVES = 5;             // must match the server cap
 const LABELS = { todo: "To Do", "in-progress": "In Progress", done: "Done" };
+
+// ---- Voice input ----
+const VOICE_MAX_MS = 30000;            // auto-stop
+const VOICE_UPLOAD_TIMEOUT_MS = 30000;
+const VOICE_MIN_BYTES = 1000;          // server rejects smaller
+const VOICE_NOTE_KEY = "sb_voice_note_ok";
+const VOICE_MIMES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+const BAR_COUNT = 24;
+
+const baseMime = (m) => String(m || "").split(";")[0].trim().toLowerCase();
+
+function pickMime() {
+  try {
+    for (const m of VOICE_MIMES) if (MediaRecorder.isTypeSupported(m)) return m;
+  } catch { /* ignore */ }
+  return "";
+}
+
+function describeVoiceError(res, data) {
+  const msg = typeof data?.error === "string" ? data.error.slice(0, 140) : "";
+  switch (res.status) {
+    case 401: return "Your session expired. Please log in again.";
+    case 403: return msg || "Voice input is a Pro feature.";
+    case 413: return "Recording too large. Try a shorter one.";
+    case 429: {
+      const s = parseInt(res.headers.get("Retry-After"), 10);
+      if (data?.code === "rate_minute" && Number.isFinite(s) && s > 0) return `Too many recordings. Try again in ${s}s.`;
+      return msg || "Voice limit reached. Try again later.";
+    }
+    case 422: return msg || "Didn't catch that. Try again.";
+    case 400: return "That recording couldn't be read. Try again.";
+    case 503: return msg || "Voice input isn't available right now.";
+    case 504: return "Transcription took too long. Try again.";
+    default: return msg || "Something went wrong. Try again.";
+  }
+}
 
 const SUGGESTIONS = [
   "Summarize the board",
@@ -240,7 +276,7 @@ function MoveCard({ m, busy, onConfirm, onCancel }) {
   );
 }
 
-export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, userEmail }) {
+export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, userEmail, isPro }) {
   const key = storageKey(userEmail, workspaceName);
 
   const [messages, setMessages] = useState(() => loadStored(key));
@@ -256,6 +292,236 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
   const abortRef = useRef(null);
   const mountedRef = useRef(true);
     const actionRef = useRef(false);
+
+  // ---- Voice input (Pro): record -> /api/ai/transcribe -> text into the input box. Audio lives in memory only. ----
+  const [voiceState, setVoiceState] = useState("idle"); // idle | note | starting | recording | transcribing | retry
+  const [voiceSecs, setVoiceSecs] = useState(0);
+  const [pulse, setPulse] = useState(false);
+  const isPresent = useIsPresent();
+  const recRef = useRef(null);
+  const streamRef = useRef(null);
+  const ctxRef = useRef(null);
+  const rafRef = useRef(0);
+  const secTimerRef = useRef(null);
+  const autoStopRef = useRef(null);
+  const chunksRef = useRef([]);
+  const recMimeRef = useRef("");
+  const pendingBlobRef = useRef(null);
+  const voiceAbortRef = useRef(null);
+  const barsRef = useRef([]);
+  const startTokenRef = useRef(0);
+  const startingRef = useRef(false);
+
+  // Idempotent: always turns the mic off and frees everything.
+  const releaseMic = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    clearInterval(secTimerRef.current);
+    clearTimeout(autoStopRef.current);
+    const rec = recRef.current;
+    if (rec) {
+      rec.ondataavailable = null;
+      rec.onstop = null;
+      rec.onerror = null;
+      try { if (rec.state !== "inactive") rec.stop(); } catch { /* ignore */ }
+    }
+    recRef.current = null;
+    chunksRef.current = [];
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => { try { t.stop(); } catch { /* ignore */ } });
+      streamRef.current = null;
+    }
+    try { ctxRef.current?.close(); } catch { /* ignore */ }
+    ctxRef.current = null;
+    barsRef.current.forEach((el) => { if (el) el.style.transform = "scaleY(0.15)"; });
+  }, []);
+
+  const cancelVoice = useCallback(() => {
+    startTokenRef.current += 1;
+    pendingBlobRef.current = null;   // also marks "cancelled" for transcribe()
+    voiceAbortRef.current?.abort();
+    releaseMic();
+    startingRef.current = false;
+    setVoiceState("idle");
+  }, [releaseMic]);
+
+  const transcribe = useCallback(async (blob) => {
+    pendingBlobRef.current = blob;
+    setVoiceState("transcribing");
+    setErrorMsg("");
+    const controller = new AbortController();
+    voiceAbortRef.current = controller;
+    const timer = setTimeout(() => controller.abort(), VOICE_UPLOAD_TIMEOUT_MS);
+    try {
+      const res = await fetch(`${serverUrl}/api/ai/transcribe`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => null);
+      if (!mountedRef.current || pendingBlobRef.current === null) return; // cancelled
+      const text = typeof data?.text === "string" ? data.text.trim() : "";
+      if (res.ok && data?.ok && text) {
+        pendingBlobRef.current = null;
+        setInput((prev) => {
+          const joined = prev.trim() ? `${prev.replace(/\s+$/, "")} ${text}` : text;
+          return joined.slice(0, MAX_CHARS);
+        });
+        setVoiceState("idle");
+        requestAnimationFrame(() => inputRef.current?.focus());
+        return;
+      }
+      pendingBlobRef.current = null;
+      setErrorMsg(res.ok ? "Didn't catch that. Try again." : describeVoiceError(res, data));
+      setVoiceState("idle");
+    } catch {
+      if (!mountedRef.current || pendingBlobRef.current === null) return; // cancelled
+      setErrorMsg("Connection problem. Tap Retry.");
+      setVoiceState("retry"); // recording stays in memory only until retry works or user discards
+    } finally {
+      clearTimeout(timer);
+    }
+  }, [serverUrl]);
+
+  const retryVoice = useCallback(() => {
+    const b = pendingBlobRef.current;
+    if (b) transcribe(b); else setVoiceState("idle");
+  }, [transcribe]);
+
+  const stopRecording = useCallback(() => {
+    const rec = recRef.current;
+    if (!rec || rec.state === "inactive") return;
+    rec.onstop = () => {
+      const type = baseMime(rec.mimeType) || baseMime(recMimeRef.current);
+      const blob = new Blob(chunksRef.current, { type });
+      releaseMic();
+      if (!mountedRef.current) return;
+      if (blob.size < VOICE_MIN_BYTES) {
+        setVoiceState("idle");
+        setErrorMsg("Recording too short. Try again.");
+        return;
+      }
+      transcribe(blob);
+    };
+    clearTimeout(autoStopRef.current);
+    clearInterval(secTimerRef.current);
+    try { rec.stop(); } catch { releaseMic(); setVoiceState("idle"); }
+  }, [releaseMic, transcribe]);
+
+  const startRecording = useCallback(async () => {
+    if (startingRef.current || recRef.current) return;
+    startingRef.current = true;
+    const tok = ++startTokenRef.current;
+    setErrorMsg("");
+    setVoiceState("starting");
+    setVoiceSecs(0);
+    // iOS: AudioContext must be created/resumed inside the tap, before any await.
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) { ctxRef.current = new AC(); ctxRef.current.resume?.(); }
+    } catch { ctxRef.current = null; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (tok !== startTokenRef.current || !mountedRef.current) {
+        stream.getTracks().forEach((t) => t.stop()); // cancelled while the permission prompt was open
+        return;
+      }
+      streamRef.current = stream;
+      const mime = pickMime();
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      recMimeRef.current = rec.mimeType || mime;
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      rec.onerror = () => {
+        releaseMic();
+        if (mountedRef.current) { setVoiceState("idle"); setErrorMsg("Recording failed. Try again."); }
+      };
+      recRef.current = rec;
+      rec.start();
+
+      // Level bars (transform only). Any failure -> simple pulse; recording still works.
+      let viz = false;
+      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      if (ctxRef.current && !reduce) {
+        try {
+          const an = ctxRef.current.createAnalyser();
+          an.fftSize = 64;
+          ctxRef.current.createMediaStreamSource(stream).connect(an); // not connected to speakers
+          const data = new Uint8Array(an.frequencyBinCount);
+          const tick = () => {
+            an.getByteFrequencyData(data);
+            for (let i = 0; i < BAR_COUNT; i++) {
+              const el = barsRef.current[i];
+              if (!el) continue;
+              const v = Math.min(1, (data[Math.floor((i * data.length * 0.75) / BAR_COUNT)] / 255) * 1.4);
+              el.style.transform = `scaleY(${Math.max(0.15, v)})`;
+            }
+            rafRef.current = requestAnimationFrame(tick);
+          };
+          tick();
+          viz = true;
+        } catch { viz = false; }
+      }
+      setPulse(!viz);
+
+      const t0 = Date.now();
+      secTimerRef.current = setInterval(() => setVoiceSecs(Math.min(30, Math.floor((Date.now() - t0) / 1000))), 250);
+      autoStopRef.current = setTimeout(() => stopRecording(), VOICE_MAX_MS);
+      setVoiceState("recording");
+    } catch (err) {
+      if (tok === startTokenRef.current) {
+        releaseMic();
+        if (mountedRef.current) {
+          setVoiceState("idle");
+          setErrorMsg(
+            err?.name === "NotAllowedError" || err?.name === "SecurityError"
+              ? "Microphone blocked. Allow it in your browser's site settings."
+              : err?.name === "NotFoundError"
+                ? "No microphone found."
+                : "Couldn't start recording. Try again."
+          );
+        }
+      }
+    } finally {
+      startingRef.current = false;
+    }
+  }, [releaseMic, stopRecording]);
+
+  const onMicTap = () => {
+    if (loading || actionRunning || voiceState !== "idle") return;
+    let seen = false;
+    try { seen = localStorage.getItem(VOICE_NOTE_KEY) === "1"; } catch { /* ignore */ }
+    if (!seen) { setVoiceState("note"); return; }
+    startRecording();
+  };
+  const acceptNote = () => {
+    try { localStorage.setItem(VOICE_NOTE_KEY, "1"); } catch { /* ignore */ }
+    startRecording(); // still inside the tap handler
+  };
+
+  // Mic must always turn off: panel exit animation, tab hidden, unmount.
+  useEffect(() => { if (!isPresent) cancelVoice(); }, [isPresent, cancelVoice]);
+  useEffect(() => {
+    const onHide = () => { if (document.hidden && (recRef.current || startingRef.current)) cancelVoice(); };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, [cancelVoice]);
+  useEffect(() => () => {
+    startTokenRef.current += 1;
+    pendingBlobRef.current = null;
+    voiceAbortRef.current?.abort();
+    releaseMic();
+  }, [releaseMic]);
+
+  const canVoice =
+    !!isPro &&
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof window !== "undefined" &&
+    typeof window.MediaRecorder !== "undefined";
+  const voiceBusy = voiceState !== "idle";
+
 
   useEffect(() => {
     mountedRef.current = true;
@@ -273,10 +539,10 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
   }, [messages, loading, errorMsg]);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e) => { if (e.key === "Escape") { cancelVoice(); onClose(); } };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, cancelVoice]);
 
   useEffect(() => {
     const vv = window.visualViewport;
@@ -493,7 +759,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
           >
             <Trash2 size={15} />
           </button>
-          <button onClick={onClose} className={ICON_BTN} title="Close" aria-label="Close">
+          <button onClick={() => { cancelVoice(); onClose(); }} className={ICON_BTN} title="Close" aria-label="Close">
             <X size={15} />
           </button>
         </div>
@@ -515,7 +781,7 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  disabled={loading}
+                  disabled={loading || voiceBusy}
                   className="text-left text-[12px] px-3.5 py-2.5 rounded-xl border transition cursor-pointer disabled:opacity-50 bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)] text-[color:var(--sb-text)] hover:border-[color:var(--sb-blue)]"
                 >
                   {s}
@@ -568,39 +834,136 @@ export default function AIChatPanel({ onClose, theme, serverUrl, workspaceName, 
         )}
       </div>
 
-      {/* Composer */}
+            {/* Composer */}
       <div
         className="shrink-0 px-3.5 pt-3 border-t border-[color:var(--sb-border-soft)]"
         style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex items-end gap-[9px]">
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={input}
-            maxLength={MAX_CHARS}
-            onChange={(e) => { setInput(e.target.value); if (errorMsg) setErrorMsg(""); }}
-            onKeyDown={onKeyDown}
-            placeholder="Ask about your board…"
-            aria-label="Message"
-            className="flex-1 resize-none rounded-xl border px-3.5 py-[11px] text-base sm:text-[13px] outline-none transition bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border)] text-[color:var(--sb-text)] placeholder:text-[color:var(--sb-text-3)] focus:border-[color:var(--sb-blue)] focus:shadow-[0_0_0_3px_var(--sb-blue-soft)]"
-          />
-          <button
-            onClick={() => send(input)}
-            disabled={loading || !input.trim()}
-            aria-label="Send"
-            className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-default bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
-          >
-            <Send size={16} />
-          </button>
-        </div>
-        {input.length >= 800 && (
-          <p
-            className={`text-[9px] mt-1 text-right ${input.length >= MAX_CHARS ? "text-[color:var(--sb-red)]" : "text-[color:var(--sb-text-3)]"}`}
-            style={mono}
-          >
-            {input.length}/{MAX_CHARS}
-          </p>
+        {voiceState === "idle" && (
+          <>
+            <div className="flex items-end gap-[9px]">
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={input}
+                maxLength={MAX_CHARS}
+                onChange={(e) => { setInput(e.target.value); if (errorMsg) setErrorMsg(""); }}
+                onKeyDown={onKeyDown}
+                placeholder="Ask about your board…"
+                aria-label="Message"
+                className="flex-1 resize-none rounded-xl border px-3.5 py-[11px] text-base sm:text-[13px] outline-none transition bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border)] text-[color:var(--sb-text)] placeholder:text-[color:var(--sb-text-3)] focus:border-[color:var(--sb-blue)] focus:shadow-[0_0_0_3px_var(--sb-blue-soft)]"
+              />
+              {canVoice && (
+                <button
+                  onClick={onMicTap}
+                  disabled={loading || actionRunning}
+                  aria-label="Record voice message"
+                  title="Voice input"
+                  className="w-10 h-10 shrink-0 rounded-xl border flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-default bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border)] text-[color:var(--sb-text-2)] hover:text-[color:var(--sb-text)]"
+                >
+                  <Mic size={16} />
+                </button>
+              )}
+              <button
+                onClick={() => send(input)}
+                disabled={loading || !input.trim()}
+                aria-label="Send"
+                className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition cursor-pointer disabled:opacity-40 disabled:cursor-default bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+            {input.length >= 800 && (
+              <p
+                className={`text-[9px] mt-1 text-right ${input.length >= MAX_CHARS ? "text-[color:var(--sb-red)]" : "text-[color:var(--sb-text-3)]"}`}
+                style={mono}
+              >
+                {input.length}/{MAX_CHARS}
+              </p>
+            )}
+          </>
+        )}
+
+        {voiceState === "note" && (
+          <div className="rounded-xl border px-3.5 py-3 flex flex-col gap-2.5 bg-[color:var(--sb-surface-2)] border-[color:var(--sb-border-soft)]">
+            <p className="text-[11.5px] leading-relaxed text-[color:var(--sb-text-2)]">
+              Your recording is sent to our server and Google Gemini to be turned into text. We don't store it.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={acceptNote}
+                className="h-9 px-4 rounded-[10px] text-[12.5px] font-semibold transition cursor-pointer bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+              >
+                Continue
+              </button>
+              <button
+                onClick={cancelVoice}
+                className="h-9 px-4 rounded-[10px] border text-[12.5px] font-medium transition cursor-pointer border-[color:var(--sb-border)] text-[color:var(--sb-text-2)] hover:bg-[color:var(--sb-surface-2)]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(voiceState === "starting" || voiceState === "recording" || voiceState === "transcribing" || voiceState === "retry") && (
+          <div className="flex items-center gap-2 h-10">
+            <button onClick={cancelVoice} className={ICON_BTN} title="Cancel" aria-label="Cancel voice input">
+              <X size={15} />
+            </button>
+
+            {voiceState === "starting" && (
+              <span className="flex-1 text-[12px] text-[color:var(--sb-text-2)]">Starting microphone…</span>
+            )}
+
+            {voiceState === "recording" && (
+              <>
+                <div
+                  className={`flex-1 min-w-0 h-8 flex items-center justify-center gap-[3px] ${pulse ? "animate-pulse motion-reduce:animate-none" : ""}`}
+                  aria-hidden="true"
+                >
+                  {Array.from({ length: BAR_COUNT }, (_, i) => (
+                    <span
+                      key={i}
+                      ref={(el) => { barsRef.current[i] = el; }}
+                      className="w-[3px] h-full rounded-full bg-[color:var(--sb-blue)]"
+                      style={{ transform: pulse ? "scaleY(0.5)" : "scaleY(0.15)", transition: "transform 80ms linear" }}
+                    />
+                  ))}
+                </div>
+                <span className="text-[11px] shrink-0 text-[color:var(--sb-text-2)]" style={mono}>
+                  0:{String(voiceSecs).padStart(2, "0")} / 0:30
+                </span>
+                <button
+                  onClick={stopRecording}
+                  aria-label="Stop recording"
+                  title="Stop"
+                  className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition cursor-pointer bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+                >
+                  <Square size={14} fill="currentColor" />
+                </button>
+              </>
+            )}
+
+            {voiceState === "transcribing" && (
+              <div className="flex-1 flex items-center gap-2 text-[12px] text-[color:var(--sb-text-2)]">
+                <Loader2 size={13} className="animate-spin" />
+                <span>Transcribing…</span>
+              </div>
+            )}
+
+            {voiceState === "retry" && (
+              <>
+                <span className="flex-1 text-[12px] text-[color:var(--sb-red)]">Connection problem.</span>
+                <button
+                  onClick={retryVoice}
+                  className="h-9 px-4 rounded-[10px] text-[12.5px] font-semibold transition cursor-pointer bg-[color:var(--sb-blue)] text-[color:var(--sb-on-blue)]"
+                >
+                  Retry
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
     </motion.div>

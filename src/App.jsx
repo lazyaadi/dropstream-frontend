@@ -1856,7 +1856,7 @@ return (
                {activateProModal}
         {deleteConfirmation.show && <DeleteWorkspaceModal key="delete-ws-modal" wsName={workspaceName} input={deleteConfirmation.input} onChange={(input) => setDeleteConfirmation(prev => ({ ...prev, input }))} onConfirm={handleConfirmDelete} onCancel={() => setDeleteConfirmation({ show: false, input: "" })} theme={theme} />}
         {showHistory && <HistoryPanel key="history-panel" history={history} isPro={effectiveIsPro} onClose={() => setShowHistory(false)} onUpgrade={openUpgradeProModal} onClearHistory={() => socket.emit("clear_history", { workspaceName })} theme={theme} />}
-        {showAI && <AIChatPanel key="ai-panel" onClose={() => setShowAI(false)} theme={theme} serverUrl={SERVER_URL} workspaceName={workspaceName} userEmail={userEmail} />}
+        {showAI && <AIChatPanel key="ai-panel" onClose={() => setShowAI(false)} theme={theme} serverUrl={SERVER_URL} workspaceName={workspaceName} userEmail={userEmail} isPro={effectiveIsPro} />}
         {showMembers && <MembersPanel key="members-panel" members={displayMembers} onlineUsers={onlineUsers} onClose={() => setShowMembers(false)} isPro={effectiveIsPro} onUpgrade={openUpgradeProModal} theme={theme} />}
         {showOnlineUsers && (
           <OnlineUsersPanel key="online-users-panel"
