@@ -713,8 +713,8 @@ function AppInner() {
                 const profile = result?.profile || null;
                 const serverIsPro = !!profile?.isPro;
                 const serverExpiresAt = profile?.proExpiresAt || null;
-                setIsPro(prev => serverIsPro || prev);
-                setProExpiresAt(prev => serverExpiresAt || prev || null);
+                setIsPro(serverIsPro);
+               setProExpiresAt(serverProExpiresAt);
                 if (serverIsPro) {
                     persistProState(s.userEmail, { isPro: true, proExpiresAt: serverExpiresAt });
                 } else {
@@ -818,10 +818,10 @@ function AppInner() {
       const serverIsPro = !!data.isPro;
       const serverProExpiresAt = data.proExpiresAt || null;
       localStorage.setItem(LAST_AUTH_EMAIL_KEY, normEmail(data.email || userEmailRef.current || userEmail || ""));
-      setIsPro(prev => serverIsPro || prev);
+      setIsPro(serverIsPro);
       setUserTaskCount(data.taskCount || 0);
       setUserResetDate(data.resetAt || null);
-      setProExpiresAt(prev => serverProExpiresAt || prev || null);
+      setIsPro(serverIsPro);
       if (serverIsPro) {
         persistProState(data.email || userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
@@ -901,14 +901,22 @@ function AppInner() {
       if (resetAt !== undefined) setUserResetDate(resetAt);
       const serverIsPro = !!sp;
       const serverProExpiresAt = exp || null;
-      const resolvedIsPro = serverIsPro || isProRef.current;
+      const resolvedIsPro = serverIsPro;
       setIsPro(resolvedIsPro);
-      setProExpiresAt(prev => serverProExpiresAt || prev || null);
+      setIsPro(serverIsPro);
       if (resolvedIsPro) {
-        persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt || proExpiresAtRef?.current || null });
+        persistProState(userEmailRef.current, { isPro: true, proExpiresAt: serverProExpiresAt });
       } else {
         clearPersistedProState(userEmailRef.current);
       }
+     try {
+      addToast("Session expired. Please sign in again.", "warn");
+  const raw = localStorage.getItem(WORKSPACE_SESSION_KEY);
+  if (raw) { const s = JSON.parse(raw); s.isPro = false; s.proExpiresAt = null; localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify(s)); }
+} catch {}
+
+
+
 
       localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify({
         workspaceName: workspaceNameRef.current,
@@ -941,13 +949,12 @@ function AppInner() {
       setAuthReady(false);
     });
 
-    socket.on("receive_update", ({ tasks: updated, history: h }) => {
+    socket.on("receive_update", ({ tasks: updated, history: h, silent }) => {
       setTasks(updated || []);
       finishBoardHydrationRef.current();
       if (h) setHistory(h);
       setSyncPulse(true); setTimeout(() => setSyncPulse(false), 1200);
-      if (h && h[0] && effectiveIsProRef.current) {
-        const latest = h[0];
+      if (h && h[0] && effectiveIsProRef.current && !silent) {        const latest = h[0];
         const latestUser = (latest.userName || "").toString().trim().toLowerCase();
         const me = (userNameRef.current || "").toString().trim().toLowerCase();
         const isSelf = latestUser && me && latestUser === me;
