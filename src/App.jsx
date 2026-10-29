@@ -910,7 +910,6 @@ function AppInner() {
         clearPersistedProState(userEmailRef.current);
       }
      try {
-      addToast("Session expired. Please sign in again.", "warn");
   const raw = localStorage.getItem(WORKSPACE_SESSION_KEY);
   if (raw) { const s = JSON.parse(raw); s.isPro = false; s.proExpiresAt = null; localStorage.setItem(WORKSPACE_SESSION_KEY, JSON.stringify(s)); }
 } catch {}
