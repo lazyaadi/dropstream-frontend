@@ -6,7 +6,7 @@ import { COLUMNS, COLUMNS_LIGHT, TD, TL } from "../../lib/constants";
 import TaskCard from "./TaskCard";
 import TaskCardSkeleton from "./TaskCardSkeleton";
 
-export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpgrade, isLoading }) {
+export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpgrade, isLoading, mentionIndex, highlightTaskId }) {
   const T       = theme === "light" ? TL : TD;
   const COLS    = theme === "light" ? COLUMNS_LIGHT : COLUMNS;
   const thisCol = COLS.find(c => c.id === col.id) || col;
@@ -44,7 +44,7 @@ export default function Column({ col, tasks, onDelete, role, isPro, theme, onUpg
             </div>
           ) : (            tasks.map(t => (
               <div key={t.id} className="mb-5 sm:mb-6 last:mb-0">
-                <TaskCard task={t} onDelete={onDelete} role={role} isPro={isPro} theme={theme} onUpgrade={onUpgrade} />
+                <TaskCard task={t} onDelete={onDelete} role={role} isPro={isPro} theme={theme} onUpgrade={onUpgrade} mentionIndex={mentionIndex} highlighted={t.id === highlightTaskId} />
               </div>
             ))
           )}

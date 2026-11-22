@@ -1,11 +1,47 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, TrendingUp, X, Info, ChevronRight, Trash2, Lock } from "lucide-react";
 import { TD, TL } from "../../lib/constants";
 import { fmtTime } from "../../lib/utils";
 
-export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onClearHistory, theme }) {
+export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onClearHistory, theme, mentions, onMarkMentionsRead, onJumpToMention }) {
   const T = theme === "light" ? TL : TD;
+  const [tab, setTab] = useState("history");
+  const [freshIds, setFreshIds] = useState(() => new Set());
+  const markReadRef = useRef(onMarkMentionsRead);
+  markReadRef.current = onMarkMentionsRead;
+  const lastMarkKeyRef = useRef("");
+  const touchRef = useRef(null);
+  const mentionItems = Array.isArray(mentions?.items) ? mentions.items : [];
+  const unreadCount = Number(mentions?.unread) || 0;
+
+  // Opening the Mentions tab marks everything read (once per batch). Dots stay until the panel closes.
+  useEffect(() => {
+    if (tab !== "mentions") { lastMarkKeyRef.current = ""; return; }
+    if (!isPro) return;
+    const unread = mentionItems.filter((m) => !m.read);
+    if (unread.length === 0) return;
+    const key = unread.map((m) => m.id).join(",");
+    if (key === lastMarkKeyRef.current) return;
+    lastMarkKeyRef.current = key;
+    setFreshIds((prev) => { const next = new Set(prev); unread.forEach((m) => next.add(m.id)); return next; });
+    markReadRef.current?.();
+  }, [isPro, tab, mentions]);
+
+  // Swipe between tabs. High threshold, horizontal only, never blocks vertical scroll.
+  const onTouchStart = (e) => {
+    if (!isPro || e.touches.length !== 1) { touchRef.current = null; return; }
+    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const onTouchEnd = (e) => {
+    const s = touchRef.current;
+    touchRef.current = null;
+    if (!s || !e.changedTouches[0]) return;
+    const dx = e.changedTouches[0].clientX - s.x;
+    const dy = e.changedTouches[0].clientY - s.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    setTab(dx < 0 ? "mentions" : "history");
+  };
 
   const icon = (action) => {
     if (action?.includes("added"))   return { ic: <CheckCircle size={11}/>, color: "text-emerald-500" };
@@ -62,6 +98,7 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
       className={`fixed right-2 top-2 sm:right-4 sm:top-16 z-[120] w-[min(15rem,calc(100vw-0.75rem))] ${T.panelBg} rounded-2xl border shadow-2xl p-3 sm:p-4 max-h-[70vh] sm:max-h-[80vh] overflow-hidden`}
     >
       <div className="flex justify-between items-center mb-4">
@@ -70,12 +107,25 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
           {!isPro && <p className="text-[9px] text-amber-500/70 mt-0.5">Pro feature</p>}
         </div>
         <div className="flex items-center gap-2">
-          {isPro && history && history.length > 0 && (
+          {isPro && tab === "history" && history && history.length > 0 && (
             <button onClick={onClearHistory} className={`${T.label} hover:text-red-500 transition cursor-pointer`} title="Clear all history"><Trash2 size={14}/></button>
           )}
           <button onClick={onClose} className={`${T.label} hover:text-blue-500 transition cursor-pointer`}><X size={14}/></button>
         </div>
       </div>
+      {isPro && (
+        <div className={`flex gap-1 mb-3 p-0.5 rounded-lg ${theme === "light" ? "bg-gray-100" : "bg-slate-800"}`}>
+          {[["history", "History"], ["mentions", "Mentions"]].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-md text-[9px] font-medium uppercase tracking-widest transition cursor-pointer ${tab === id ? (theme === "light" ? "bg-white text-blue-600 shadow-sm" : "bg-slate-700 text-blue-400") : T.label}`}>
+              {label}
+              {id === "mentions" && unreadCount > 0 && tab !== "mentions" && (
+                <span className="px-1 rounded-full bg-blue-500 text-white text-[8px] leading-[14px]">{unreadCount > 9 ? "9+" : unreadCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
       {!isPro ? (
         <div className="relative max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
           <div className="space-y-1.5 blur-[5px] opacity-40 select-none pointer-events-none">
@@ -100,8 +150,32 @@ export default function HistoryPanel({ history, onClose, isPro, onUpgrade, onCle
             <button onClick={onUpgrade} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl font-medium text-[9px] uppercase tracking-widest transition cursor-pointer">Upgrade</button>
           </div>
         </div>
+      ) : tab === "mentions" ? (
+        <div className="space-y-1 max-h-[calc(70vh-6rem)] sm:max-h-[calc(80vh-6.5rem)] overflow-y-auto pr-1">
+          {mentionItems.length === 0 && <p className={`text-[10px] ${T.label} text-center py-4`}>No mentions yet</p>}
+          {mentionItems.map((m) => {
+            const isNew = !m.read || freshIds.has(m.id);
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => onJumpToMention?.(m.taskId)}
+                className={`w-full text-left flex gap-1.5 px-2 py-1.5 rounded-lg ${T.historyBg} border cursor-pointer transition hover:border-blue-500/50`}
+              >
+                <span className={`shrink-0 mt-[5px] w-1.5 h-1.5 rounded-full ${isNew ? "bg-blue-500" : "bg-transparent"}`} title={isNew ? "Unread" : undefined} />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[9px] sm:text-[10px] font-medium ${T.text} break-words leading-snug`}>
+                    <span className="text-blue-500 font-medium">{m.fromName}</span>{" mentioned you in "}
+                    <span className="font-semibold">{`"${m.taskTitle}"`}</span>
+                  </p>
+                  <p className={`text-[8px] sm:text-[9px] ${T.label} mt-0.5`}>{fmtTime(m.createdAt)}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       ) : (
-        <div className="space-y-1 max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(80vh-4rem)] overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-[calc(70vh-6rem)] sm:max-h-[calc(80vh-6.5rem)] overflow-y-auto pr-1">
           {(!history || history.length === 0) && <p className={`text-[10px] ${T.label} text-center py-4`}>No actions yet</p>}
           {(history || []).map((h, i) => {
             const { ic, color } = icon(h.action);

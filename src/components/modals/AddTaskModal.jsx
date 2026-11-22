@@ -2,8 +2,9 @@ import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Lock, Upload, X } from "lucide-react";
 import { PRIORITY, TD, TL } from "../../lib/constants";
+import { getMentionQuery, getMentionSuggestions, applyMentionPick } from "../../lib/mentions";
 
-export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade }) {
+export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade, members, userEmail, userName }) {
   const T = theme === "light" ? TL : TD;
   const [title, setTitle]       = useState("");
   const [desc, setDesc]         = useState("");
@@ -12,6 +13,59 @@ export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade }
   const [image, setImage]       = useState(null);
   const [imgError, setImgError] = useState("");
   const fileRef = useRef(null);
+  const titleRef = useRef(null);
+  const descRef  = useRef(null);
+  const [picker, setPicker]   = useState(null);
+  const [pickIdx, setPickIdx] = useState(0);
+
+  // @mention picker (Pro only). Shows after "@" + 2 letters; the server does the real matching.
+  const refreshPicker = (field, value, caret) => {
+    if (!isPro) { setPicker(null); return; }
+    const range = getMentionQuery(value, caret);
+    const items = range ? getMentionSuggestions(members, range.query, userEmail, userName) : [];
+    if (items.length === 0) { setPicker(null); return; }
+    setPicker({ field, range, items });
+    setPickIdx(0);
+  };
+
+  const pickMention = (name) => {
+    if (!picker) return;
+    const isTitle = picker.field === "title";
+    const { value: next, caret } = applyMentionPick(isTitle ? title : desc, picker.range, name);
+    if (isTitle) setTitle(next); else setDesc(next);
+    setPicker(null);
+    const el = (isTitle ? titleRef : descRef).current;
+    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(caret, caret); } });
+  };
+
+  // Returns true when the key was used by the picker.
+  const handlePickerKey = (e, field) => {
+    if (e.nativeEvent?.isComposing || !picker || picker.field !== field) return false;
+    const n = picker.items.length;
+    if (e.key === "ArrowDown") { e.preventDefault(); setPickIdx(i => (i + 1) % n); return true; }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setPickIdx(i => (i - 1 + n) % n); return true; }
+    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickMention(picker.items[pickIdx] || picker.items[0]); return true; }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setPicker(null); return true; }
+    if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) setPicker(null);
+    return false;
+  };
+
+  const renderPicker = (field) => {
+    if (!picker || picker.field !== field) return null;
+    return (
+      <ul role="listbox" className={`mt-1.5 rounded-xl border overflow-hidden ${theme === "light" ? "bg-white border-gray-200" : "bg-slate-800 border-slate-700"}`}>
+        {picker.items.map((name, i) => (
+          <li key={name} role="option" aria-selected={i === pickIdx}
+            onMouseDown={e => { e.preventDefault(); pickMention(name); }}
+            onMouseEnter={() => setPickIdx(i)}
+            className={`px-3 py-2.5 text-sm cursor-pointer ${i === pickIdx
+              ? (theme === "light" ? "bg-blue-50 text-blue-700" : "bg-blue-500/20 text-blue-300")
+              : (theme === "light" ? "text-gray-700" : "text-slate-200")}`}
+          >{"@" + name}</li>
+        ))}
+      </ul>
+    );
+  };
 
   const handleFile = (e) => {
     const f = e.target.files[0];
@@ -61,16 +115,27 @@ export default function AddTaskModal({ onAdd, onClose, theme, isPro, onUpgrade }
             <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-2 block`}>Task Title *</label>
             <input type="text" placeholder="e.g. Fix login bug" autoFocus
               className={`w-full p-3 rounded-xl border outline-none transition-all text-sm ${T.input}`}
-              value={title} onChange={e => setTitle(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && title.trim() && handleAdd()}
+              ref={titleRef}
+              value={title}
+              onChange={e => { setTitle(e.target.value); refreshPicker("title", e.target.value, e.target.selectionStart); }}
+              onClick={e => refreshPicker("title", e.target.value, e.target.selectionStart)}
+              onKeyDown={e => { if (handlePickerKey(e, "title")) return; if (e.key === "Enter" && title.trim()) handleAdd(); }}
+              onBlur={() => setPicker(null)}
             />
+            {renderPicker("title")}
           </div>
 
           <div>
             <label className={`text-[10px] font-black ${T.label} uppercase tracking-widest mb-2 block`}>Description</label>
             <textarea placeholder="Add details…"
               className={`w-full p-3 rounded-xl border outline-none transition-all h-20 resize-none text-sm ${T.input}`}
-              value={desc} onChange={e => setDesc(e.target.value)} />
+              ref={descRef}
+              value={desc}
+              onChange={e => { setDesc(e.target.value); refreshPicker("desc", e.target.value, e.target.selectionStart); }}
+              onClick={e => refreshPicker("desc", e.target.value, e.target.selectionStart)}
+              onKeyDown={e => { handlePickerKey(e, "desc"); }}
+              onBlur={() => setPicker(null)} />
+            {renderPicker("desc")}
           </div>
 
           <div>

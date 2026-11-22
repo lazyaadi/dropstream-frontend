@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -7,8 +7,9 @@ import { Lock, Clock, AlertTriangle, X, Paperclip, ChevronDown, ChevronUp } from
 import { PRIORITY, TD, TL } from "../../lib/constants";
 import { fmtFull, obfuscateText } from "../../lib/utils";
 import DotsIcon from "../ui/DotsIcon";
+import { splitMentions, mentionStyle } from "../../lib/mentions";
 
-export default function TaskCard({ task, onDelete, role, isPro, isOverlay = false, theme, onUpgrade }) {
+export default function TaskCard({ task, onDelete, role, isPro, isOverlay = false, theme, onUpgrade, mentionIndex, highlighted = false }) {
   const T   = theme === "light" ? TL : TD;
   const p   = PRIORITY[task.priority] || PRIORITY.medium;
   const pCls = theme === "light" ? p.clsLight : p.cls;
@@ -57,6 +58,15 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
     transition: { duration: 220, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
   });
 
+  // Pro only. Hooks stay above the overlay early return below.
+  const titleParts = useMemo(() => (isPro ? splitMentions(task.title, mentionIndex) : null), [isPro, task.title, mentionIndex]);
+  const descParts  = useMemo(() => (isPro ? splitMentions(task.description, mentionIndex) : null), [isPro, task.description, mentionIndex]);
+  const mStyle = mentionStyle(theme);
+  const renderWithMentions = (parts, plain) =>
+    parts
+      ? parts.map((p, i) => (p.m ? <span key={i} style={mStyle}>{p.t}</span> : <React.Fragment key={i}>{p.t}</React.Fragment>))
+      : plain;
+
   if (isOverlay) {
     return (
       <div className={`p-4 rounded-xl border shadow-2xl mb-3 rotate-1 opacity-95 select-none
@@ -70,12 +80,14 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
   return (
     <div
       ref={setNodeRef}
+      data-task-id={task.id}
       style={{
         transform: CSS.Translate.toString(transform),
         transition: isDragging ? undefined : transition,
         opacity: isDragging ? 0.35 : 1,
         contentVisibility: "auto",
         containIntrinsicSize: "0 140px",
+        ...(highlighted ? { boxShadow: `inset 0 0 0 2px ${mStyle.color}` } : null),
       }}
       className={`${T.card} backdrop-blur-none md:backdrop-blur-sm p-3 rounded-xl border mb-4 shadow-md group relative
         ${isDragging ? "z-0" : "transition-shadow duration-200"}
@@ -134,7 +146,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
             onClick={() => isLongTitle && setShowFullTitle(v => !v)}
             className={`text-sm font-semibold leading-snug ${isDone ? "line-through text-slate-400" : T.cardText} ${isLongTitle ? "cursor-pointer" : ""} ${showFullTitle ? "" : "line-clamp-2"}`}
             style={{ fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.005em" }}>
-            {task.title}
+            {renderWithMentions(titleParts, task.title)}
           </p>
           {isLongTitle && (
             <button
@@ -146,7 +158,7 @@ export default function TaskCard({ task, onDelete, role, isPro, isOverlay = fals
         </div>
         {task.description ? (
           <p className={`text-xs mt-1.5 leading-relaxed whitespace-pre-wrap break-words ${isDone ? "line-through text-slate-400/80" : T.subText}`}>
-            {task.description}
+            {renderWithMentions(descParts, task.description)}
           </p>
         ) : (
           <p className={`text-xs mt-1.5 italic ${theme === "light" ? "text-gray-400" : "text-slate-600"}`}>
